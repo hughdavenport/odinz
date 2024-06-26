@@ -1,5 +1,8 @@
 # odinz: an interpreter for the z-machine
 
+[![patreon](https://img.shields.io/badge/patreon-FF5441?style=for-the-badge&logo=Patreon)](Https://www.patreon.com/hughdavenport)
+[![youtube](https://img.shields.io/badge/youtube-FF0000?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=d4Gjps5gIjw&list=PL5r5Q39GjMDfyTr-QAT0hU81j5ly1nTpB)
+
 This repo is a hobby project implementing a [z-machine](https://en.wikipedia.org/wiki/Z-machine) in the [Odin programming language](https://odin-lang.org/). The language is new to me so I'm using it as a learning project.
 
 The Z-machine is a virtual machine that was developed in 1979 (!!) to play text adventure games. One such example is the [Zork trilogy](https://en.wikipedia.org/wiki/Zork): The Great Underground Empire, The Wizard of Frobozz, and The Dungeon Master. I grew up playing Zork.
