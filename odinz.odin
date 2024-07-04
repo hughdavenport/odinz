@@ -33,9 +33,6 @@ main :: proc() {
     if !ok do error(fmt.tprint("Could not read '%s'", romfile), EXIT_CODE.io_error)
     defer delete(data)
     machine := &Machine{romfile=romfile, memory=data}
-
-    header_dump(machine)
-
     initialise_machine(machine)
     execute(machine)
 }
