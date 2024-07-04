@@ -50,13 +50,14 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
     opcode_s, ok := fmt.enum_value_to_string(instruction.opcode)
     if !ok do opcode_s = "???"
 
-    fmt.printf("%-16s", opcode_s)
+    fmt.printf(" %-16s", opcode_s)
     switch instruction.opcode {
     case .UNKNOWN: unreachable()
     case .ADD,
          .JE,
          .LOADW,
-         .RET:
+         .RET,
+         .STOREW:
         operands_dump(instruction.operands[:])
 
     case .CALL:

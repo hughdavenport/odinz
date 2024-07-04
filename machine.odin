@@ -217,9 +217,15 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 1)
                 ret := machine_read_operand(machine, &instruction.operands[0])
                 pop(&machine.frames)
-                delete_frame(current_frame)
-                current_frame = &machine.frames[len(machine.frames) - 1]
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
+                delete_frame(current_frame)
+
+            case .STOREW:
+                assert(len(instruction.operands) == 3)
+                array := machine_read_operand(machine, &instruction.operands[0])
+                index := machine_read_operand(machine, &instruction.operands[1])
+                value := machine_read_operand(machine, &instruction.operands[2])
+                machine_write_word(machine, u32(array + 2 * index), value)
 
         }
 
