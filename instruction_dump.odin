@@ -53,7 +53,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
     case .UNKNOWN: unreachable()
     case .ADD,
-         .JE:
+         .JE,
+         .LOADW:
         operands_dump(instruction.operands[:])
 
     case .CALL:

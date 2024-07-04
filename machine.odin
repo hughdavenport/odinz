@@ -141,11 +141,11 @@ execute :: proc(machine: ^Machine) {
     for {
         current_frame := &machine.frames[len(machine.frames) - 1]
 
-        fmt.printfln("PC = %04x", current_frame.pc)
-        fmt.printfln("%v", current_frame^)
-        // fmt.printfln("frames = %v", machine.frames)
-
         instruction := instruction_read(machine, current_frame.pc)
+
+        // fmt.printfln("PC = %04x", current_frame.pc)
+        // fmt.printfln("%v", current_frame^)
+        // fmt.printfln("frames = %v", machine.frames)
 
         for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
         instruction_dump(machine, &instruction)
@@ -185,6 +185,14 @@ execute :: proc(machine: ^Machine) {
                     fmt.println("Jumping")
                     current_frame.pc = u32(i32(current_frame.pc) + i32(instruction.branch_offset) - 2)
                 }
+
+            case .LOADW:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                array := machine_read_operand(machine, &instruction.operands[0])
+                index := machine_read_operand(machine, &instruction.operands[1])
+                machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
+
         }
 
         current_frame.pc += u32(instruction.length)
