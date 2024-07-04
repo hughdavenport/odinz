@@ -1,7 +1,6 @@
 package odinz
 
 import "core:fmt"
-import "core:slice"
 
 Header :: struct {
     version: u8 `fmt:"x"`,
@@ -130,11 +129,9 @@ header_flags2_print :: proc(header: ^Header) {
 }
 
 header_dump :: proc(machine: ^Machine) {
-    raw_header := machine.memory[0:0x40]
-    ptr, ok := slice.get_ptr(raw_header, 0)
-    if !ok do error("Could not get header slice")
-    header := transmute(^Header)ptr;
+    header := machine_header(machine)
 
+    raw_header := machine.memory[0:0x40]
     fmt.eprintfln("raw header = %02x", raw_header)
     fmt.eprintfln("header struct = %#v", header^)
 
