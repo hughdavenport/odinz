@@ -16,6 +16,10 @@ var_ops := [?]Opcode{
 }
 
 @(private="file")
+one_ops := [?]Opcode{
+}
+
+@(private="file")
 two_ops := [?]Opcode{
     0x01 = .JE,
     0x0F = .LOADW,
@@ -111,6 +115,22 @@ instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
 }
 
 @(private="file")
+instruction_read_operand :: proc(machine: ^Machine, instruction: ^Instruction, type: OperandType) {
+    value := u16(instruction_next_byte(machine, instruction))
+    switch type {
+        case .LARGE_CONSTANT:
+            value = value << 8 + u16(instruction_next_byte(machine, instruction))
+
+        // Nothing needed
+        case .VARIABLE, .SMALL_CONSTANT:
+    }
+    append(&instruction.operands, Operand {
+        type = type,
+        value = value,
+    })
+}
+
+@(private="file")
 instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
     opcode := byte & 0b11111
     operand_types := instruction_next_byte(machine, instruction)
@@ -121,31 +141,35 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
         if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
         instruction.operands = make([dynamic]Operand, 0, 4)
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
-            value := u16(instruction_next_byte(machine, instruction))
-            operand : Operand
             if bit(operand_types, 7) && !bit(operand_types, 6) {
-                operand = Operand {
-                    type = OperandType.VARIABLE,
-                    value = value,
-                }
+                instruction_read_operand(machine, instruction, .VARIABLE)
+            } else if bit(operand_types, 6) {
+                instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
             } else {
-                if bit(operand_types, 6) {
-                    operand = Operand {
-                        type = OperandType.SMALL_CONSTANT,
-                        value = value,
-                    }
-                } else {
-                    value = value << 8 + u16(instruction_next_byte(machine, instruction))
-                    operand = Operand {
-                        type = OperandType.LARGE_CONSTANT,
-                        value = value,
-                    }
-                }
+                instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
             }
-            append(&instruction.operands, operand)
         }
     } else {
+        fmt.printfln("%08b", byte)
         unimplemented("2OP") // maybe just the same?
+    }
+}
+
+@(private="file")
+instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
+    opcode := byte & 0b1111
+    if bit(byte, 4) && bit(byte, 5) {
+        fmt.printfln("%08b", byte)
+        unimplemented("0OP")
+    } else {
+        if opcode >= len(one_ops) do unimplemented(fmt.tprintf("one_ops[0x%X]", opcode))
+        instruction.opcode = one_ops[opcode]
+        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("one_ops[0x%X]", opcode))
+        instruction.operands = make([dynamic]Operand, 0, 1)
+
+        if bit(byte, 5) do instruction_read_operand(machine, instruction, .VARIABLE)
+        else if bit(byte, 4) do instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
+        else do instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
     }
 }
 
@@ -154,15 +178,13 @@ instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte
     if byte & 0b11111 >= len(two_ops) do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
     instruction.opcode = two_ops[byte & 0b11111]
     if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
-    instruction.operands = make([dynamic]Operand, 2)
+    instruction.operands = make([dynamic]Operand, 0, 2)
 
-    instruction.operands[0].value = u16(instruction_next_byte(machine, instruction))
-    if bit(byte, 6) do instruction.operands[0].type = .VARIABLE
-    else do instruction.operands[0].type = .SMALL_CONSTANT
+    if bit(byte, 6) do instruction_read_operand(machine, instruction, .VARIABLE)
+    else do instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
 
-    instruction.operands[1].value = u16(instruction_next_byte(machine, instruction))
-    if bit(byte, 5) do instruction.operands[1].type = .VARIABLE
-    else do instruction.operands[1].type = .SMALL_CONSTANT
+    if bit(byte, 5) do instruction_read_operand(machine, instruction, .VARIABLE)
+    else do instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
 }
 
 instruction_read :: proc(machine: ^Machine, address: u32) -> (instruction: Instruction) {
@@ -172,8 +194,7 @@ instruction_read :: proc(machine: ^Machine, address: u32) -> (instruction: Instr
     if bit(byte, 7) && bit(byte, 6) {
         instruction_read_variable(machine, &instruction, byte)
     } else if bit(byte, 7) && !bit(byte, 6) {
-        fmt.printfln("%08b", byte)
-        unimplemented("instruction short")
+        instruction_read_short(machine, &instruction, byte)
     } else if byte == 0xBE {
         fmt.printfln("%08b", byte)
         unimplemented("instruction extended")
