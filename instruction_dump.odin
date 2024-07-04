@@ -42,6 +42,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
     if instruction.length > 8 {
         fmt.println()
         fmt.printf("%31s", "")
+    } else {
+        fmt.printf("%*[1]s", "", 1 + 2 * (9 - instruction.length))
     }
 
     opcode_s, ok := fmt.enum_value_to_string(instruction.opcode)
