@@ -171,7 +171,20 @@ execute :: proc(machine: ^Machine) {
                 if instruction.has_branch do unimplemented()
 
             case .JE:
-                unimplemented()
+                assert(len(instruction.operands) > 1)
+                assert(instruction.has_branch)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                condition := false
+                for &operand in instruction.operands[1:] {
+                    if machine_read_operand(machine, &operand) == a {
+                        condition = true
+                        break
+                    }
+                }
+                if condition == instruction.branch_condition {
+                    fmt.println("Jumping")
+                    current_frame.pc = u32(i32(current_frame.pc) + i32(instruction.branch_offset) - 2)
+                }
         }
 
         current_frame.pc += u32(instruction.length)

@@ -36,8 +36,8 @@ Instruction :: struct {
     operands: [dynamic]Operand,
     store: u8,
     has_store: bool,
-    branch: u16,
     has_branch: bool,
+    branch_offset: i16,
     branch_condition: bool,
     // TODO zstring type
     has_zstring: bool,
@@ -84,12 +84,12 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     if instruction.has_branch {
         byte := instruction_next_byte(machine, instruction)
         instruction.branch_condition = bit(byte, 7)
-        instruction.branch = u16(byte & 0b111111)
+        instruction.branch_offset = i16(byte & 0b111111)
 
         if !bit(byte, 6) {
-            instruction.branch = instruction.branch << 8 + u16(instruction_next_byte(machine, instruction))
+            instruction.branch_offset = instruction.branch_offset << 8 + i16(instruction_next_byte(machine, instruction) & 0xFF)
             if bit(byte, 5) {
-                instruction.branch = instruction.branch | 0b11100000 // Sign extend
+                instruction.branch_offset = instruction.branch_offset | 0b11 << 13 // Sign extend
             }
         }
     }
@@ -113,6 +113,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
     operand_types := instruction_next_byte(machine, instruction)
 
     if bit(byte, 5) {
+        if opcode >= len(var_ops) do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
         instruction.opcode = var_ops[opcode]
         if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
         instruction.operands = make([dynamic]Operand, 0, 4)
@@ -147,6 +148,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 
 @(private="file")
 instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
+    if byte & 0b11111 >= len(two_ops) do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
     instruction.opcode = two_ops[byte & 0b11111]
     if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
     instruction.operands = make([dynamic]Operand, 2)

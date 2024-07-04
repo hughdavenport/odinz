@@ -81,11 +81,12 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
         if instruction.branch_condition do fmt.print(" [TRUE] ")
         else do fmt.print(" [FALSE] ")
 
-        switch i16(instruction.branch) {
+        switch i16(instruction.branch_offset) {
             case 0: fmt.print(" RFALSE")
             case 1: fmt.print(" RTRUE")
             case:
-                address := u32(i32(instruction.address + u32(instruction.length)) + i32(i16(instruction.branch)) - 2)
+                next := instruction.address + u32(instruction.length)
+                address := u32(i32(next) + i32(i16(instruction.branch_offset)) - 2)
                 fmt.printf("%04x", address)
         }
     }
