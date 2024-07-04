@@ -9,7 +9,7 @@ variable_dump :: proc(value: u16, store := false) {
         if store do fmt.print("-(SP)")
         else do fmt.print("(SP)+")
     case 1..<16: fmt.printf("L%02x", value - 1)
-    case 16..=256: fmt.printf("G%02x", value - 16)
+    case 16..<256: fmt.printf("G%02x", value - 16)
     case: unreachable()
     }
 }
@@ -51,6 +51,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
 
     fmt.printf("%-16s", opcode_s)
     switch instruction.opcode {
+    case .UNKNOWN: unreachable()
     case .ADD: operands_dump(instruction.operands[:])
     case .CALL:
         assert(len(instruction.operands) > 0)

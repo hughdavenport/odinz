@@ -3,8 +3,9 @@ package odinz
 import "core:fmt"
 
 Opcode :: enum {
-   ADD,
-   CALL,
+    UNKNOWN,
+    ADD,
+    CALL,
 }
 
 @(private="file")
@@ -48,7 +49,7 @@ bit :: proc(byte: u8, bit: u8) -> bool {
 
 @(private="file")
 instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u8 {
-    b := machine_get_byte(machine, instruction.address + u32(instruction.length))
+    b := machine_read_byte(machine, instruction.address + u32(instruction.length))
     instruction.length += 1
     return b
 }
@@ -56,6 +57,7 @@ instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u
 @(private="file")
 instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .UNKNOWN: unreachable()
         case .ADD: instruction.has_store = true
         case .CALL: instruction.has_store = true
     }
@@ -66,6 +68,7 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
 @(private="file")
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .UNKNOWN: unreachable()
         case .ADD: instruction.has_branch = false
         case .CALL: instruction.has_branch = false
     }
@@ -78,6 +81,7 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
 @(private="file")
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .UNKNOWN: unreachable()
         case .ADD: instruction.has_zstring = false
         case .CALL: instruction.has_zstring = false
     }
@@ -92,6 +96,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 
     if bit(byte, 5) {
         instruction.opcode = var_ops[opcode]
+        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
         instruction.operands = make([dynamic]Operand, 0, 4)
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
             value := u16(instruction_next_byte(machine, instruction))
@@ -125,6 +130,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 @(private="file")
 instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
     instruction.opcode = two_ops[byte & 0b11111]
+    if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
     instruction.operands = make([dynamic]Operand, 2)
 
     instruction.operands[0].value = u16(instruction_next_byte(machine, instruction))
