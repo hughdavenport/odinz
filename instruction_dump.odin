@@ -52,42 +52,43 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
     fmt.printf(" %-16s", opcode_s)
     switch instruction.opcode {
-    case .UNKNOWN: unreachable()
-    case .ADD,
-         .JE,
-         .LOADW,
-         .RET,
-         .STOREW:
-        operands_dump(instruction.operands[:])
+        case .UNKNOWN: unreachable()
+        case .ADD,
+             .JE,
+             .LOADW,
+             .RET,
+             .STOREW:
+            operands_dump(instruction.operands[:])
 
-    case .CALL:
-        assert(len(instruction.operands) > 0)
-        switch instruction.operands[0].type {
-        case .SMALL_CONSTANT, .LARGE_CONSTANT:
-            routine_addr := packed_addr(machine, instruction.operands[0].value)
-            fmt.printf("%04x", routine_addr)
-        case .VARIABLE:
-            operand_dump(instruction.operands[0])
-        }
-        if len(instruction.operands) > 1 {
-            fmt.print(" (")
-            operands_dump(instruction.operands[1:])
-            fmt.print(")")
-        }
+        case .CALL:
+            assert(len(instruction.operands) > 0)
+            switch instruction.operands[0].type {
+                case .SMALL_CONSTANT, .LARGE_CONSTANT:
+                    routine_addr := packed_addr(machine, instruction.operands[0].value)
+                    fmt.printf("%04x", routine_addr)
+                case .VARIABLE:
+                    operand_dump(instruction.operands[0])
+            }
+            if len(instruction.operands) > 1 {
+                fmt.print(" (")
+                operands_dump(instruction.operands[1:])
+                fmt.print(")")
+            }
 
-    case .JUMP:
-        assert(len(instruction.operands) == 1)
-        offset := i16(machine_read_operand(machine, &instruction.operands[0]))
-        switch offset {
-            case 0: fmt.print("RFALSE")
-            case 1: fmt.print("RTRUE")
-            case:
-                next := i32(instruction.address + u32(instruction.length))
-                address := u32(next + i32(offset) - 2)
-                fmt.printf("%04x", address)
-        }
-        fmt.println()
-        return
+        case .JUMP:
+            assert(len(instruction.operands) == 1)
+            offset := i16(machine_read_operand(machine, &instruction.operands[0]))
+            switch offset {
+                case 0: fmt.print("RFALSE")
+                case 1: fmt.print("RTRUE")
+                case:
+                    next := i32(instruction.address + u32(instruction.length))
+                    address := u32(next + i32(offset) - 2)
+                    fmt.printf("%04x", address)
+            }
+            fmt.println()
+            return
+
     }
 
     if instruction.has_store {
