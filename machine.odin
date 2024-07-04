@@ -11,6 +11,11 @@ Frame :: struct {
     store: u8,
 }
 
+delete_frame :: proc(frame: ^Frame) {
+    delete(frame.variables)
+    delete(frame.stack)
+}
+
 Machine :: struct {
     romfile: string,
     memory: []u8,
@@ -207,6 +212,14 @@ execute :: proc(machine: ^Machine) {
                 array := machine_read_operand(machine, &instruction.operands[0])
                 index := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
+
+            case .RET:
+                assert(len(instruction.operands) == 1)
+                ret := machine_read_operand(machine, &instruction.operands[0])
+                pop(&machine.frames)
+                delete_frame(current_frame)
+                current_frame = &machine.frames[len(machine.frames) - 1]
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
 
         }
 

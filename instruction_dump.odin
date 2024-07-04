@@ -55,7 +55,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
     case .UNKNOWN: unreachable()
     case .ADD,
          .JE,
-         .LOADW:
+         .LOADW,
+         .RET:
         operands_dump(instruction.operands[:])
 
     case .CALL:
