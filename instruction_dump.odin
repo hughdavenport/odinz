@@ -33,7 +33,7 @@ operands_dump :: proc(operands: []Operand) {
     }
 }
 
-instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
+instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent := 0) {
     fmt.printf("% 5x: ", instruction.address)
     for byte in machine.memory[instruction.address:][:instruction.length] {
         fmt.printf(" %02x", byte)
@@ -41,9 +41,10 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
 
     if instruction.length > 8 {
         fmt.println()
+        for i := 0; i < indent; i += 1 do fmt.print(" >  ")
         fmt.printf("%31s", "")
     } else {
-        fmt.printf("%*[1]s", "", 1 + 2 * (9 - instruction.length))
+        fmt.printf("%*[1]s", "", 3 * (8 - instruction.length))
     }
 
     opcode_s, ok := fmt.enum_value_to_string(instruction.opcode)
@@ -71,6 +72,20 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
             operands_dump(instruction.operands[1:])
             fmt.print(")")
         }
+
+    case .JUMP:
+        assert(len(instruction.operands) == 1)
+        offset := i16(machine_read_operand(machine, &instruction.operands[0]))
+        switch offset {
+            case 0: fmt.print("RFALSE")
+            case 1: fmt.print("RTRUE")
+            case:
+                next := i32(instruction.address + u32(instruction.length))
+                address := u32(next + i32(offset) - 2)
+                fmt.printf("%04x", address)
+        }
+        fmt.println()
+        return
     }
 
     if instruction.has_store {
@@ -83,8 +98,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
         else do fmt.print(" [FALSE] ")
 
         switch i16(instruction.branch_offset) {
-            case 0: fmt.print(" RFALSE")
-            case 1: fmt.print(" RTRUE")
+            case 0: fmt.print("RFALSE")
+            case 1: fmt.print("RTRUE")
             case:
                 next := instruction.address + u32(instruction.length)
                 address := u32(i32(next) + i32(i16(instruction.branch_offset)) - 2)

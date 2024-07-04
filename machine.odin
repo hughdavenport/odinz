@@ -141,14 +141,15 @@ execute :: proc(machine: ^Machine) {
     for {
         current_frame := &machine.frames[len(machine.frames) - 1]
 
-        instruction := instruction_read(machine, current_frame.pc)
-
-        // fmt.printfln("PC = %04x", current_frame.pc)
+        fmt.printfln("PC = %04x", current_frame.pc)
         // fmt.printfln("%v", current_frame^)
         // fmt.printfln("frames = %v", machine.frames)
 
+        instruction := instruction_read(machine, current_frame.pc)
+        current_frame.pc += u32(instruction.length)
+
         for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
-        instruction_dump(machine, &instruction)
+        instruction_dump(machine, &instruction, len(machine.frames) - 1)
 
         switch instruction.opcode {
             case .UNKNOWN: unreachable()
@@ -183,7 +184,21 @@ execute :: proc(machine: ^Machine) {
                 }
                 if condition == instruction.branch_condition {
                     fmt.println("Jumping")
-                    current_frame.pc = u32(i32(current_frame.pc) + i32(instruction.branch_offset) - 2)
+                    offset := i16(instruction.branch_offset)
+                    switch offset {
+                        case 0: unimplemented("RFALSE")
+                        case 1: unimplemented("RTRUE")
+                        case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
+                    }
+                }
+
+            case .JUMP:
+                assert(len(instruction.operands) == 1)
+                offset := i16(machine_read_operand(machine, &instruction.operands[0]))
+                switch offset {
+                    case 0: unimplemented("RFALSE")
+                    case 1: unimplemented("RTRUE")
+                    case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
                 }
 
             case .LOADW:
@@ -195,7 +210,6 @@ execute :: proc(machine: ^Machine) {
 
         }
 
-        current_frame.pc += u32(instruction.length)
         delete_instruction(instruction)
     }
 }
