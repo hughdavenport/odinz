@@ -1,5 +1,7 @@
 package odinz
 
+import "core:fmt"
+
 Opcode :: enum {
    CALL,
 }
@@ -111,14 +113,34 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
     }
 }
 
+@(private="file")
+instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
+    instruction.opcode = two_ops[byte & 0b11111]
+    instruction.operands = make([dynamic]Operand, 2)
+
+    instruction.operands[0].value = u16(instruction_next_byte(machine, instruction))
+    if bit(byte, 6) do instruction.operands[0].type = .VARIABLE
+    else do instruction.operands[0].type = .SMALL_CONSTANT
+
+    instruction.operands[1].value = u16(instruction_next_byte(machine, instruction))
+    if bit(byte, 5) do instruction.operands[1].type = .VARIABLE
+    else do instruction.operands[1].type = .SMALL_CONSTANT
+}
+
 instruction_read :: proc(machine: ^Machine, address: u32) -> (instruction: Instruction) {
     instruction.address = address
     byte := instruction_next_byte(machine, &instruction)
 
     if bit(byte, 7) && bit(byte, 6) {
         instruction_read_variable(machine, &instruction, byte)
+    } else if bit(byte, 7) && !bit(byte, 6) {
+        fmt.printfln("%08b", byte)
+        unimplemented("instruction short")
+    } else if byte == 0xBE {
+        fmt.printfln("%08b", byte)
+        unimplemented("instruction extended")
     } else {
-        unimplemented("instruction other forms")
+        instruction_read_long(machine, &instruction, byte)
     }
 
     instruction_read_store(machine, &instruction)
