@@ -8,8 +8,8 @@ variable_dump :: proc(value: u16, store := false) {
     case 0:
         if store do fmt.print("-(SP)")
         else do fmt.print("(SP)+")
-    case 1..=16: fmt.printf("L%d", value - 1)
-    case 17..=256: fmt.printf("G%d", value - 17)
+    case 1..<16: fmt.printf("L%02x", value - 1)
+    case 16..=256: fmt.printf("G%02x", value - 16)
     case: unreachable()
     }
 }
@@ -49,14 +49,15 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
     opcode_s, ok := fmt.enum_value_to_string(instruction.opcode)
     if !ok do opcode_s = "???"
 
-    fmt.print(opcode_s)
+    fmt.printf("%-16s", opcode_s)
     switch instruction.opcode {
+    case .ADD: operands_dump(instruction.operands[:])
     case .CALL:
         assert(len(instruction.operands) > 0)
         switch instruction.operands[0].type {
         case .SMALL_CONSTANT, .LARGE_CONSTANT:
             routine_addr := packed_addr(machine, instruction.operands[0].value)
-            fmt.printf("%12s%x", "", routine_addr)
+            fmt.printf("%x", routine_addr)
         case .VARIABLE:
             operand_dump(instruction.operands[0])
         }
