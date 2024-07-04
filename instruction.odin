@@ -6,6 +6,7 @@ Opcode :: enum {
     UNKNOWN,
     ADD,
     CALL,
+    JE,
 }
 
 @(private="file")
@@ -15,7 +16,8 @@ var_ops := [?]Opcode{
 
 @(private="file")
 two_ops := [?]Opcode{
-    20 = .ADD,
+    0x01 = .JE,
+    0x14 = .ADD,
 }
 
 OperandType :: enum {
@@ -36,6 +38,7 @@ Instruction :: struct {
     has_store: bool,
     branch: u16,
     has_branch: bool,
+    branch_condition: bool,
     // TODO zstring type
     has_zstring: bool,
     address: u32,
@@ -58,8 +61,11 @@ instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u
 instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
         case .UNKNOWN: unreachable()
-        case .ADD: instruction.has_store = true
-        case .CALL: instruction.has_store = true
+        case .ADD,
+             .CALL: instruction.has_store = true
+
+        // Not needed, but good for detecting new instructions
+        case .JE:
     }
 
     if instruction.has_store do instruction.store = instruction_next_byte(machine, instruction)
@@ -69,21 +75,33 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
         case .UNKNOWN: unreachable()
-        case .ADD: instruction.has_branch = false
-        case .CALL: instruction.has_branch = false
+        case .JE: instruction.has_branch = true
+
+        // Not needed, but good for detecting new instructions
+        case .ADD, .CALL:
     }
 
-    if instruction.has_branch do unimplemented("read branch")
-        // need to read one byte, test some bits to see if true/false and extra byte or not
-        // probably use a struct for branch
+    if instruction.has_branch {
+        byte := instruction_next_byte(machine, instruction)
+        instruction.branch_condition = bit(byte, 7)
+        instruction.branch = u16(byte & 0b111111)
+
+        if !bit(byte, 6) {
+            instruction.branch = instruction.branch << 8 + u16(instruction_next_byte(machine, instruction))
+            if bit(byte, 5) {
+                instruction.branch = instruction.branch | 0b11100000 // Sign extend
+            }
+        }
+    }
 }
 
 @(private="file")
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
         case .UNKNOWN: unreachable()
-        case .ADD: instruction.has_zstring = false
-        case .CALL: instruction.has_zstring = false
+
+        // Not needed, but good for detecting new instructions
+        case .ADD, .CALL, .JE:
     }
 
     if instruction.has_zstring do unimplemented("read zstring")

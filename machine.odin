@@ -140,36 +140,38 @@ execute :: proc(machine: ^Machine) {
 
     for {
         current_frame := &machine.frames[len(machine.frames) - 1]
+
         fmt.printfln("PC = %04x", current_frame.pc)
         fmt.printfln("%v", current_frame^)
         // fmt.printfln("frames = %v", machine.frames)
+
         instruction := instruction_read(machine, current_frame.pc)
 
         for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
         instruction_dump(machine, &instruction)
 
         switch instruction.opcode {
-        case .UNKNOWN: unreachable()
-        case .ADD:
-            assert(len(instruction.operands) == 2)
-            assert(instruction.has_store)
-            a := i16(machine_read_operand(machine, &instruction.operands[0]))
-            b := i16(machine_read_operand(machine, &instruction.operands[1]))
-            fmt.printfln("a = 0x%x, b = 0x%x, sum = 0x%x, store = 0x%x",
-                a, b, u16(a + b), u16(instruction.store))
-            machine_write_variable(machine, u16(instruction.store), u16(a + b))
+            case .UNKNOWN: unreachable()
+            case .ADD:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), u16(a + b))
 
-        case .CALL:
-            assert(len(instruction.operands) > 0)
-            assert(instruction.operands[0].type != .VARIABLE)
-            routine_addr := packed_addr(machine, instruction.operands[0].value)
-            routine := routine_read(machine, routine_addr)
-            routine.has_store = instruction.has_store
-            routine.store = instruction.store
-            append(&machine.frames, routine)
+            case .CALL:
+                assert(len(instruction.operands) > 0)
+                assert(instruction.operands[0].type != .VARIABLE)
+                routine_addr := packed_addr(machine, instruction.operands[0].value)
+                routine := routine_read(machine, routine_addr)
+                routine.has_store = instruction.has_store
+                routine.store = instruction.store
+                append(&machine.frames, routine)
 
-            if instruction.has_branch do unimplemented()
+                if instruction.has_branch do unimplemented()
 
+            case .JE:
+                unimplemented()
         }
 
         current_frame.pc += u32(instruction.length)

@@ -52,13 +52,16 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
     fmt.printf("%-16s", opcode_s)
     switch instruction.opcode {
     case .UNKNOWN: unreachable()
-    case .ADD: operands_dump(instruction.operands[:])
+    case .ADD,
+         .JE:
+        operands_dump(instruction.operands[:])
+
     case .CALL:
         assert(len(instruction.operands) > 0)
         switch instruction.operands[0].type {
         case .SMALL_CONSTANT, .LARGE_CONSTANT:
             routine_addr := packed_addr(machine, instruction.operands[0].value)
-            fmt.printf("%x", routine_addr)
+            fmt.printf("%04x", routine_addr)
         case .VARIABLE:
             operand_dump(instruction.operands[0])
         }
@@ -75,7 +78,16 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction) {
     }
 
     if instruction.has_branch {
-        unimplemented("print branch")
+        if instruction.branch_condition do fmt.print(" [TRUE] ")
+        else do fmt.print(" [FALSE] ")
+
+        switch i16(instruction.branch) {
+            case 0: fmt.print(" RFALSE")
+            case 1: fmt.print(" RTRUE")
+            case:
+                address := u32(i32(instruction.address + u32(instruction.length)) + i32(i16(instruction.branch)) - 2)
+                fmt.printf("%04x", address)
+        }
     }
 
     if instruction.has_zstring {
