@@ -213,6 +213,14 @@ execute :: proc(machine: ^Machine) {
                 index := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
 
+            case .PUT_PROP:
+                assert(len(instruction.operands) == 3)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                property := machine_read_operand(machine, &instruction.operands[1])
+                value := machine_read_operand(machine, &instruction.operands[2])
+
+                unimplemented()
+
             case .RET:
                 assert(len(instruction.operands) == 1)
                 ret := machine_read_operand(machine, &instruction.operands[0])

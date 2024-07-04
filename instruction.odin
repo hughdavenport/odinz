@@ -6,17 +6,19 @@ Opcode :: enum {
     UNKNOWN,
     ADD,
     CALL,
-    LOADW,
     JE,
     JUMP,
+    LOADW,
+    PUT_PROP,
     RET,
     STOREW,
 }
 
 @(private="file")
 var_ops := [?]Opcode{
-    .CALL,
-    .STOREW,
+    0x00 = .CALL,
+    0x01 = .STOREW,
+    0x03 = .PUT_PROP,
 }
 
 @(private="file")
@@ -78,7 +80,7 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
              .LOADW: instruction.has_store = true
 
         // Not needed, but good for detecting new instructions
-        case .JE, .JUMP, .RET, .STOREW:
+        case .JE, .JUMP, .PUT_PROP, .RET, .STOREW:
     }
 
     if instruction.has_store do instruction.store = instruction_next_byte(machine, instruction)
@@ -91,7 +93,7 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
         case .JE: instruction.has_branch = true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .LOADW, .JUMP, .RET, .STOREW:
+        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STOREW:
     }
 
     if instruction.has_branch {
@@ -114,7 +116,7 @@ instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
         case .UNKNOWN: unreachable()
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .JE, .JUMP, .LOADW, .RET, .STOREW:
+        case .ADD, .CALL, .JE, .JUMP, .LOADW, .PUT_PROP, .RET, .STOREW:
     }
 
     if instruction.has_zstring do unimplemented("read zstring")
