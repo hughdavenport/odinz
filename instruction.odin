@@ -3,12 +3,18 @@ package odinz
 import "core:fmt"
 
 Opcode :: enum {
+   ADD,
    CALL,
 }
 
 @(private="file")
 var_ops := [?]Opcode{
-    Opcode.CALL,
+    .CALL,
+}
+
+@(private="file")
+two_ops := [?]Opcode{
+    20 = .ADD,
 }
 
 OperandType :: enum {
@@ -50,6 +56,7 @@ instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u
 @(private="file")
 instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .ADD: instruction.has_store = true
         case .CALL: instruction.has_store = true
     }
 
@@ -59,6 +66,7 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
 @(private="file")
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .ADD: instruction.has_branch = false
         case .CALL: instruction.has_branch = false
     }
 
@@ -70,6 +78,7 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
 @(private="file")
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
+        case .ADD: instruction.has_zstring = false
         case .CALL: instruction.has_zstring = false
     }
 

@@ -105,6 +105,7 @@ execute :: proc(machine: ^Machine) {
         instruction_dump(machine, &instruction)
 
         switch instruction.opcode {
+        case .ADD: unimplemented()
         case .CALL:
             assert(len(instruction.operands) > 0)
             assert(instruction.operands[0].type != .VARIABLE)
