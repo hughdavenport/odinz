@@ -23,6 +23,8 @@ execute :: proc(machine: ^Machine) {
         for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
         instruction_dump(machine, &instruction, len(machine.frames) - 1)
 
+        jump_condition := false
+
         switch instruction.opcode {
             case .UNKNOWN: unreachable()
             case .ADD:
@@ -35,38 +37,32 @@ execute :: proc(machine: ^Machine) {
             case .CALL:
                 assert(len(instruction.operands) > 0)
                 assert(instruction.operands[0].type != .VARIABLE)
+                assert(instruction.has_store)
                 routine_addr := packed_addr(machine, instruction.operands[0].value)
-                routine := routine_read(machine, routine_addr)
-                routine.has_store = instruction.has_store
-                routine.store = instruction.store
-                append(&machine.frames, routine)
-
-                if instruction.has_branch do unimplemented()
-                if instruction.has_zstring do unimplemented()
+                if routine_addr == 0 {
+                    machine_write_variable(machine, u16(instruction.store), 0)
+                } else {
+                    routine := routine_read(machine, routine_addr)
+                    routine.has_store = instruction.has_store
+                    routine.store = instruction.store
+                    append(&machine.frames, routine)
+                }
 
             case .JE:
                 assert(len(instruction.operands) > 1)
                 assert(instruction.has_branch)
                 a := machine_read_operand(machine, &instruction.operands[0])
-                condition := false
+                jump_condition = false
                 for &operand in instruction.operands[1:] {
                     if machine_read_operand(machine, &operand) == a {
-                        condition = true
+                        jump_condition = true
                         break
-                    }
-                }
-                if condition == instruction.branch_condition {
-                    fmt.println("Jumping")
-                    offset := i16(instruction.branch_offset)
-                    switch offset {
-                        case 0: unimplemented("RFALSE")
-                        case 1: unimplemented("RTRUE")
-                        case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
                     }
                 }
 
             case .JUMP:
                 assert(len(instruction.operands) == 1)
+                // JUMP is different in that it takes the offset as an operand
                 offset := i16(machine_read_operand(machine, &instruction.operands[0]))
                 switch offset {
                     case 0: unimplemented("RFALSE")
@@ -78,16 +74,7 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 1)
                 assert(instruction.has_branch)
                 a := machine_read_operand(machine, &instruction.operands[0])
-                condition := a == 0
-                if condition == instruction.branch_condition {
-                    fmt.println("Jumping")
-                    offset := i16(instruction.branch_offset)
-                    switch offset {
-                        case 0: unimplemented("RFALSE")
-                        case 1: unimplemented("RTRUE")
-                        case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
-                    }
-                }
+                jump_condition = a == 0
 
             case .LOADW:
                 assert(len(instruction.operands) == 2)
@@ -125,6 +112,17 @@ execute :: proc(machine: ^Machine) {
                 b := i16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), u16(a - b))
 
+        }
+
+
+        if instruction.has_branch && jump_condition == instruction.branch_condition {
+            fmt.println("Jumping")
+            offset := i16(instruction.branch_offset)
+            switch offset {
+                case 0: unimplemented("RFALSE")
+                case 1: unimplemented("RTRUE")
+                case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
+            }
         }
 
         delete_instruction(instruction)
