@@ -93,6 +93,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .PUT_PROP:
             assert(len(instruction.operands) == 3)
+            // FIXME if operand is a variable, then just print that
             object := machine_read_operand(machine, &instruction.operands[0])
             // fmt.printf("\"%s\"", object_read(machine, object).zstring.string)
             fmt.println(); unimplemented()

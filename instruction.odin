@@ -2,42 +2,6 @@ package odinz
 
 import "core:fmt"
 
-Opcode :: enum {
-    UNKNOWN,
-    ADD,
-    CALL,
-    JE,
-    JUMP,
-    JZ,
-    LOADW,
-    PUT_PROP,
-    RET,
-    STOREW,
-    SUB,
-}
-
-@(private="file")
-var_ops := [?]Opcode{
-    0x00 = .CALL,
-    0x01 = .STOREW,
-    0x03 = .PUT_PROP,
-}
-
-@(private="file")
-one_ops := [?]Opcode{
-    0x00 = .JZ,
-    0x0B = .RET,
-    0x0C = .JUMP,
-}
-
-@(private="file")
-two_ops := [?]Opcode{
-    0x01 = .JE,
-    0x0F = .LOADW,
-    0x14 = .ADD,
-    0x15 = .SUB,
-}
-
 OperandType :: enum {
     SMALL_CONSTANT,
     LARGE_CONSTANT,
@@ -77,30 +41,14 @@ instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u
 
 @(private="file")
 instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
-    switch instruction.opcode {
-        case .UNKNOWN: unreachable()
-        case .ADD,
-             .CALL,
-             .LOADW,
-             .SUB: instruction.has_store = true
-
-        // Not needed, but good for detecting new instructions
-        case .JE, .JUMP, .JZ, .PUT_PROP, .RET, .STOREW:
-    }
+    instruction.has_store = opcode_needs_store(instruction.opcode)
 
     if instruction.has_store do instruction.store = instruction_next_byte(machine, instruction)
 }
 
 @(private="file")
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
-    switch instruction.opcode {
-        case .UNKNOWN: unreachable()
-        case .JE,
-             .JZ: instruction.has_branch = true
-
-        // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STOREW, .SUB:
-    }
+    instruction.has_branch = opcode_needs_branch(instruction.opcode)
 
     if instruction.has_branch {
         byte := instruction_next_byte(machine, instruction)
@@ -118,12 +66,7 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
 
 @(private="file")
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
-    switch instruction.opcode {
-        case .UNKNOWN: unreachable()
-
-        // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STOREW, .SUB:
-    }
+    instruction.has_zstring = opcode_needs_zstring(instruction.opcode)
 
     if instruction.has_zstring do unimplemented("read zstring")
 }
