@@ -144,9 +144,9 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
     operand_types := instruction_next_byte(machine, instruction)
 
     if bit(byte, 5) {
-        if opcode >= len(var_ops) do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
+        if opcode >= len(var_ops) do unimplemented(fmt.tprintf("var_ops[0x%02X]", byte & 0b11111))
         instruction.opcode = var_ops[opcode]
-        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("var_ops[0x%X]", byte & 0b11111))
+        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("var_ops[0x%02X]", byte & 0b11111))
         instruction.operands = make([dynamic]Operand, 0, 4)
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
             if bit(operand_types, 7) && !bit(operand_types, 6) {
@@ -170,9 +170,9 @@ instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byt
         fmt.printfln("%08b", byte)
         unimplemented("0OP")
     } else {
-        if opcode >= len(one_ops) do unimplemented(fmt.tprintf("one_ops[0x%X]", opcode))
+        if opcode >= len(one_ops) do unimplemented(fmt.tprintf("one_ops[0x%02X]", opcode))
         instruction.opcode = one_ops[opcode]
-        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("one_ops[0x%X]", opcode))
+        if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("one_ops[0x%02X]", opcode))
         instruction.operands = make([dynamic]Operand, 0, 1)
 
         if bit(byte, 5) do instruction_read_operand(machine, instruction, .VARIABLE)
@@ -183,9 +183,9 @@ instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byt
 
 @(private="file")
 instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
-    if byte & 0b11111 >= len(two_ops) do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
+    if byte & 0b11111 >= len(two_ops) do unimplemented(fmt.tprintf("two_ops[0x%02X]", byte & 0b11111))
     instruction.opcode = two_ops[byte & 0b11111]
-    if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("two_ops[0x%X]", byte & 0b11111))
+    if instruction.opcode == .UNKNOWN do unimplemented(fmt.tprintf("two_ops[0x%02X]", byte & 0b11111))
     instruction.operands = make([dynamic]Operand, 0, 2)
 
     if bit(byte, 6) do instruction_read_operand(machine, instruction, .VARIABLE)

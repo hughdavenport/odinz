@@ -35,7 +35,7 @@ machine_read_byte :: proc(machine: ^Machine, address: u32) -> u8 {
 }
 
 machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
-    return u16(machine_read_byte(machine, address)) << 16 + u16(machine_read_byte(machine, address + 2))
+    return u16(machine_read_byte(machine, address)) << 16 + u16(machine_read_byte(machine, address + 1))
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
@@ -175,6 +175,7 @@ execute :: proc(machine: ^Machine) {
                 append(&machine.frames, routine)
 
                 if instruction.has_branch do unimplemented()
+                if instruction.has_zstring do unimplemented()
 
             case .JE:
                 assert(len(instruction.operands) > 1)
