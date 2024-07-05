@@ -8,10 +8,12 @@ Opcode :: enum {
     CALL,
     JE,
     JUMP,
+    JZ,
     LOADW,
     PUT_PROP,
     RET,
     STOREW,
+    SUB,
 }
 
 @(private="file")
@@ -23,6 +25,7 @@ var_ops := [?]Opcode{
 
 @(private="file")
 one_ops := [?]Opcode{
+    0x00 = .JZ,
     0x0B = .RET,
     0x0C = .JUMP,
 }
@@ -32,6 +35,7 @@ two_ops := [?]Opcode{
     0x01 = .JE,
     0x0F = .LOADW,
     0x14 = .ADD,
+    0x15 = .SUB,
 }
 
 OperandType :: enum {
@@ -77,10 +81,11 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
         case .UNKNOWN: unreachable()
         case .ADD,
              .CALL,
-             .LOADW: instruction.has_store = true
+             .LOADW,
+             .SUB: instruction.has_store = true
 
         // Not needed, but good for detecting new instructions
-        case .JE, .JUMP, .PUT_PROP, .RET, .STOREW:
+        case .JE, .JUMP, .JZ, .PUT_PROP, .RET, .STOREW:
     }
 
     if instruction.has_store do instruction.store = instruction_next_byte(machine, instruction)
@@ -90,10 +95,11 @@ instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     switch instruction.opcode {
         case .UNKNOWN: unreachable()
-        case .JE: instruction.has_branch = true
+        case .JE,
+             .JZ: instruction.has_branch = true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STOREW:
+        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STOREW, .SUB:
     }
 
     if instruction.has_branch {
@@ -116,7 +122,7 @@ instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
         case .UNKNOWN: unreachable()
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .JE, .JUMP, .LOADW, .PUT_PROP, .RET, .STOREW:
+        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STOREW, .SUB:
     }
 
     if instruction.has_zstring do unimplemented("read zstring")

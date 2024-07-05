@@ -207,6 +207,21 @@ execute :: proc(machine: ^Machine) {
                     case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
                 }
 
+            case .JZ:
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_branch)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                condition := a == 0
+                if condition == instruction.branch_condition {
+                    fmt.println("Jumping")
+                    offset := i16(instruction.branch_offset)
+                    switch offset {
+                        case 0: unimplemented("RFALSE")
+                        case 1: unimplemented("RTRUE")
+                        case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
+                    }
+                }
+
             case .LOADW:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
@@ -235,6 +250,13 @@ execute :: proc(machine: ^Machine) {
                 index := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
                 machine_write_word(machine, u32(array + 2 * index), value)
+
+            case .SUB:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), u16(a - b))
 
         }
 
