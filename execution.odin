@@ -27,9 +27,8 @@ execute :: proc(machine: ^Machine) {
 
         switch instruction.opcode {
             case .UNKNOWN:
-                machine_dump(machine)
-                fmt.eprintln("Invalid opcode while executing instruction %v", instruction)
-                unreachable()
+                unreach("Invalid opcode while executing instruction %v",
+                        instruction, machine=machine)
             case .ADD:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)

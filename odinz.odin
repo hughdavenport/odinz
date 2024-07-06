@@ -2,6 +2,7 @@ package odinz
 
 import "core:fmt"
 import "core:os"
+import "core:strings"
 
 EXIT_CODE :: enum int {
     usage      = 64,
@@ -20,6 +21,19 @@ usage_and_exit :: proc(progname: string) -> ! {
 error :: proc(message: string, code: EXIT_CODE = EXIT_CODE.software) -> ! {
     fmt.eprintln("ERROR:", message)
     os.exit(int(code))
+}
+
+unreach :: proc(format: string, args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
+    if machine != nil do machine_dump(machine)
+    loc_format := "%s(%d:%d) %s: "
+    new_format, err := strings.concatenate([]string{loc_format, format})
+    if err != nil {
+        fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
+        fmt.eprintfln(format, args)
+        unreachable()
+    }
+    fmt.eprintfln(new_format, loc.file_path, loc.line, loc.column, loc.procedure, args)
+    unreachable()
 }
 
 main :: proc() {

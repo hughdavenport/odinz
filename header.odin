@@ -82,9 +82,7 @@ header_flags1_print :: proc(header: ^Header) {
     case 4, 5, 6:
         unimplemented(fmt.tprint("Unsupported version", header.version))
 
-    case:
-        fmt.eprintfln("Error printing flags of header, invalid version %d", header.version)
-        unreachable()
+    case: unreach("Error printing flags of header, invalid version %d", header.version)
     }
     fmt.println()
 }
@@ -123,9 +121,7 @@ header_flags2_print :: proc(header: ^Header) {
             fmt.print("Transcripting")
         }
 
-    case:
-        fmt.eprintfln("Error printing flags 2 of header, invalid version %d", header.version)
-        unreachable()
+    case: unreach("Error printing flags 2 of header, invalid version %d", header.version)
     }
     if ! print_comma do fmt.print("None")
     fmt.println()

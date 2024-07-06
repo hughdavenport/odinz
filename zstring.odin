@@ -68,14 +68,10 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
                         case .ZSCII_1, .ZSCII_2, .ABBREV:
                             fallthrough
                         case:
-                            machine_dump(machine)
-                            fmt.eprintfln("Parsing zstring failed. Invalid mode");
-                            unreachable()
+                            unreach("Parsing zstring failed. Invalid mode");
                     }
                 case:
-                    machine_dump(machine)
-                    fmt.eprintfln("Parsing zstring failed. Invalid zchar %d", zchar);
-                    unreachable()
+                    unreach("Parsing zstring failed. Invalid zchar %d", zchar, machine=machine);
             }
 
         case .ZSCII_1: unimplemented()
@@ -83,9 +79,7 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
         case .ABBREV: unimplemented()
 
         case:
-            machine_dump(machine)
-            fmt.eprintfln("Parsing zstring failed. Invalid mode");
-            unreachable()
+            unreach("Parsing zstring failed. Invalid mode", machine=machine);
     }
 }
 
@@ -95,10 +89,7 @@ delete_zstring :: proc(zstring: ZString) {
 
 zstring_dump :: proc(machine: ^Machine, address: u16, length: u8 = 0) {
     sb, err := strings.builder_make_none()
-    if err != nil {
-        fmt.eprintln(err, "Buy more RAM");
-        unreachable()
-    }
+    if err != nil do unreach("Buy more RAM: %v", err, machine=machine);
     zstring := ZString{sb = &sb}
     defer delete_zstring(zstring)
     if length > 0 {
