@@ -1,6 +1,7 @@
 package odinz
 
 import "core:fmt"
+import "core:os"
 import "core:slice"
 
 Machine :: struct {
@@ -16,7 +17,15 @@ machine_header :: proc(machine: ^Machine) -> ^Header {
     return transmute(^Header)ptr;
 }
 
-machine_dump :: proc(machine: ^Machine) {
+machine_dump :: proc(machine: ^Machine, to_disk := false) {
+    if to_disk {
+        if !os.write_entire_file("machine.dump", machine.memory) {
+            unreach("Error writing machine dump")
+        }
+        return
+    }
+
+    // FIXME have a param to say save to disk. Can then use ztools to inspect
     fmt.println()
     fmt.println("***** Machine dump *****")
     fmt.println()

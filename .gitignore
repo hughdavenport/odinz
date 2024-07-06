@@ -3,3 +3,6 @@ roms
 
 # Built binary
 odinz
+
+# Debug file
+machine.dump

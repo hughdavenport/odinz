@@ -13,9 +13,11 @@ execute :: proc(machine: ^Machine) {
     for {
         current_frame := &machine.frames[len(machine.frames) - 1]
 
+        machine_dump(machine, to_disk = true)
         fmt.printfln("PC = %04x", current_frame.pc)
         // fmt.printfln("%v", current_frame^)
         // fmt.printfln("frames = %v", machine.frames)
+
 
         instruction := instruction_read(machine, current_frame.pc)
         current_frame.pc += u32(instruction.length)
