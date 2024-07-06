@@ -45,7 +45,7 @@ machine_read_byte :: proc(machine: ^Machine, address: u32) -> u8 {
 }
 
 machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
-    return u16(machine_read_byte(machine, address)) << 16 + u16(machine_read_byte(machine, address + 1))
+    return u16(machine_read_byte(machine, address)) << 8 + u16(machine_read_byte(machine, address + 1))
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
@@ -54,7 +54,7 @@ machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
 }
 
 machine_write_word :: proc(machine: ^Machine, address: u32, value: u16) {
-    machine_write_byte(machine, address, u8(value >> 16))
+    machine_write_byte(machine, address, u8(value >> 8))
     machine_write_byte(machine, address + 1, u8(value))
 }
 
