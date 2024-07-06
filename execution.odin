@@ -89,7 +89,7 @@ execute :: proc(machine: ^Machine) {
                 property := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
 
-                unimplemented()
+                object_put_property(machine, object, property, value)
 
             case .RET:
                 assert(len(instruction.operands) == 1)
