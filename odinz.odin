@@ -24,15 +24,10 @@ error :: proc(message: string, code: EXIT_CODE = EXIT_CODE.software) -> ! {
 }
 
 unreach :: proc(format: string, args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
-    if machine != nil do machine_dump(machine)
-    loc_format := "%s(%d:%d) %s: "
-    new_format, err := strings.concatenate([]string{loc_format, format})
-    if err != nil {
-        fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
-        fmt.eprintfln(format, args)
-        unreachable()
-    }
-    fmt.eprintfln(new_format, loc.file_path, loc.line, loc.column, loc.procedure, args)
+    // if machine != nil do machine_dump(machine)
+    loc_format := "%s(%d:%d) %s: UNREACHABLE"
+    fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
+    fmt.eprintfln(format, ..args)
     unreachable()
 }
 
