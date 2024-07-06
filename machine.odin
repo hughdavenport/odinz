@@ -76,9 +76,14 @@ machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
             case 0: return pop(&current_frame.stack)
             case 1..<16: return current_frame.variables[variable - 1]
             case 16..<255: return machine_read_global(machine, variable - 16)
-            case: unreachable()
+            case:
+                machine_dump(machine)
+                fmt.eprintfln("Error while reading variable. Unexpected number %d", value)
+                unreachable()
         }
     }
+    machine_dump(machine)
+    fmt.eprintfln("Error while reading operand")
     unreachable()
 }
 
@@ -88,7 +93,10 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
         case 0: append(&current_frame.stack, value)
         case 1..<16: current_frame.variables[variable - 1] = value
         case 16..<255: machine_write_global(machine, variable - 16, value)
-        case: unreachable()
+        case:
+            machine_dump(machine)
+            fmt.eprintfln("Error while writing variable. Unexpected number %d", value)
+            unreachable()
     }
 }
 

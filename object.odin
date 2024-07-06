@@ -11,7 +11,11 @@ object_dump :: proc(machine: ^Machine, object_number: u16) {
     properties := machine_read_word(machine, u32(objects_table) + offset)
     length := machine_read_byte(machine, u32(properties))
 
-    if length == 0 do unreachable()
+    if length == 0 {
+        machine_dump(machine)
+        fmt.eprintfln("Dumping object %d failed. String of length 0", object_number);
+        unreachable()
+    }
     zstring_dump(machine, properties + 1, length)
 }
 

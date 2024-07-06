@@ -37,7 +37,10 @@ two_ops := [?]Opcode{
 
 opcode_needs_branch :: proc(opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreachable()
+        case .UNKNOWN:
+            machine_dump(machine)
+            fmt.eprintln("Invalid opcode during instruction parsing")
+            unreachable()
         case .JE,
              .JZ: return true
 
@@ -49,7 +52,10 @@ opcode_needs_branch :: proc(opcode: Opcode) -> bool {
 
 opcode_needs_store :: proc(opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreachable()
+        case .UNKNOWN:
+            machine_dump(machine)
+            fmt.eprintln("Invalid opcode during instruction parsing")
+            unreachable()
         case .ADD,
              .CALL,
              .LOADW,
@@ -63,7 +69,10 @@ opcode_needs_store :: proc(opcode: Opcode) -> bool {
 
 opcode_needs_zstring :: proc(opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreachable()
+        case .UNKNOWN:
+            machine_dump(machine)
+            fmt.eprintln("Invalid opcode during instruction parsing")
+            unreachable()
 
         // Not needed, but good for detecting new instructions
         case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STOREW, .SUB:

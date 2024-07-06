@@ -26,7 +26,10 @@ execute :: proc(machine: ^Machine) {
         jump_condition := false
 
         switch instruction.opcode {
-            case .UNKNOWN: unreachable()
+            case .UNKNOWN:
+                machine_dump(machine)
+                fmt.eprintln("Invalid opcode while executing instruction %v", instruction)
+                unreachable()
             case .ADD:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
