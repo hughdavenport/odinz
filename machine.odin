@@ -16,6 +16,29 @@ machine_header :: proc(machine: ^Machine) -> ^Header {
     return transmute(^Header)ptr;
 }
 
+machine_dump :: proc(machine: ^Machine) {
+    fmt.println()
+    fmt.println("***** Machine dump *****")
+    fmt.println()
+    fmt.println("romfile=", machine.romfile)
+    fmt.println(len(machine.frames), "frames:")
+    for frame in machine.frames {
+        fmt.println(frame)
+    }
+    fmt.println("memory:")
+    for i := 0; i < len(machine.memory); i += 0x10 {
+        fmt.printf("%06x ", i)
+        for b := 0; b < 0x10; b += 2 {
+            fmt.printf(" %02x%02x", machine.memory[i + b], machine.memory[i + b + 1])
+        }
+        fmt.println()
+    }
+}
+
+bit :: proc(byte: u8, bit: u8) -> bool {
+    return byte | (1<<bit) == byte
+}
+
 machine_read_byte :: proc(machine: ^Machine, address: u32) -> u8 {
     if int(address) >= len(machine.memory) do return 0
     return machine.memory[address]

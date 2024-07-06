@@ -28,11 +28,6 @@ Instruction :: struct {
 }
 
 @(private="file")
-bit :: proc(byte: u8, bit: u8) -> bool {
-    return byte | (1<<bit) == byte
-}
-
-@(private="file")
 instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u8 {
     b := machine_read_byte(machine, instruction.address + u32(instruction.length))
     instruction.length += 1
