@@ -91,8 +91,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             fmt.println()
             return
 
-        case .PUT_PROP:
-            assert(len(instruction.operands) == 3)
+        case .PUT_PROP,
+             .TEST_ATTR:
+            assert(len(instruction.operands) > 1)
             switch instruction.operands[0].type {
                 case .SMALL_CONSTANT, .LARGE_CONSTANT:
                     fmt.print('"')

@@ -52,3 +52,7 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
         unimplemented("V4+ property tables")
     }
 }
+
+object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) -> bool {
+    unimplemented()
+}

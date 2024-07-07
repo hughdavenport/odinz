@@ -123,6 +123,13 @@ execute :: proc(machine: ^Machine) {
                 b := i16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), u16(a - b))
 
+            case .TEST_ATTR:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                attribute := machine_read_operand(machine, &instruction.operands[1])
+                jump_condition = object_test_attr(machine, object, attribute)
+
         }
 
 
