@@ -109,8 +109,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
     num := byte & 0b1111
     if bit(byte, 4) && bit(byte, 5) {
-        fmt.printfln("%08b", byte)
-        unimplemented("0OP")
+        instruction.opcode = opcode(num, .ZERO)
     } else {
         instruction.opcode = opcode(num, .ONE)
         instruction.operands = make([dynamic]Operand, 0, 1)

@@ -91,6 +91,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             fmt.println()
             return
 
+        case .PRINT:
+            unimplemented()
+
         case .PUT_PROP,
              .TEST_ATTR:
             assert(len(instruction.operands) > 1)
