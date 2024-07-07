@@ -2,6 +2,14 @@ package odinz
 
 import "core:fmt"
 
+OpcodeType :: enum {
+    VAR,
+    ZERO,
+    ONE,
+    TWO,
+    EXT,
+}
+
 Opcode :: enum {
     UNKNOWN,
     ADD,
@@ -12,16 +20,9 @@ Opcode :: enum {
     LOADW,
     PUT_PROP,
     RET,
+    STORE,
     STOREW,
     SUB,
-}
-
-OpcodeType :: enum {
-    VAR,
-    ZERO,
-    ONE,
-    TWO,
-    EXT,
 }
 
 var_ops := [?]Opcode{
@@ -38,6 +39,7 @@ one_ops := [?]Opcode{
 
 two_ops := [?]Opcode{
     0x01 = .JE,
+    0x0D = .STORE,
     0x0F = .LOADW,
     0x14 = .ADD,
     0x15 = .SUB,
@@ -65,7 +67,7 @@ opcode_needs_branch :: proc(opcode: Opcode) -> bool {
              .JZ: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STOREW, .SUB:
+        case .ADD, .CALL, .LOADW, .JUMP, .PUT_PROP, .RET, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -79,7 +81,7 @@ opcode_needs_store :: proc(opcode: Opcode) -> bool {
              .SUB: return true
 
         // Not needed, but good for detecting new instructions
-        case .JE, .JUMP, .JZ, .PUT_PROP, .RET, .STOREW:
+        case .JE, .JUMP, .JZ, .PUT_PROP, .RET, .STORE, .STOREW:
     }
     return false
 }
@@ -89,7 +91,7 @@ opcode_needs_zstring :: proc(opcode: Opcode) -> bool {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STOREW, .SUB:
+        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STORE, .STOREW, .SUB:
     }
     return false
 }

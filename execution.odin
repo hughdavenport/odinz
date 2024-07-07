@@ -102,6 +102,13 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
 
+            case .STORE:
+                assert(len(instruction.operands) == 2)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                value := machine_read_operand(machine, &instruction.operands[1])
+                machine_write_variable(machine, variable, value)
+
+
             case .STOREW:
                 assert(len(instruction.operands) == 3)
                 array := machine_read_operand(machine, &instruction.operands[0])

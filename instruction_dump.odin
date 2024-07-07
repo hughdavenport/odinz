@@ -103,6 +103,13 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             }
             fmt.print(",")
             operands_dump(instruction.operands[1:])
+
+        case .STORE:
+            assert(len(instruction.operands) == 2)
+            variable := instruction.operands[0].value
+            variable_dump(variable)
+            fmt.print(",")
+            operand_dump(instruction.operands[1])
     }
 
     if instruction.has_store {
