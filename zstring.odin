@@ -99,8 +99,16 @@ zstring_dump :: proc(machine: ^Machine, address: u16, length: u8 = 0) {
             zstring_process_zchar(machine, &zstring, u8((word >> 10) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 5) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
-            if i < length - 1 do assert(!bit(u8(word >> 8), 7))
-            if i == length - 1 do assert(bit(u8(word >> 8), 7))
+            if i < length - 1 && bit(u8(word >> 8), 7) {
+                unreach("Not the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is set\n" +
+                        "Processed %d words, zstring so far is \"%s\", and this word just processed is 0b%16b",
+                        length, address, i, strings.to_string(zstring.sb^), word)
+            }
+            if i == length - 1 && !bit(u8(word >> 8), 7) {
+                unreach("On the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is NOT set\n" +
+                        "Zstring is \"%s\", and this word just processed is 0b%16b",
+                        length, address, strings.to_string(zstring.sb^), word)
+            }
         }
         fmt.print(strings.to_string(zstring.sb^))
     } else {

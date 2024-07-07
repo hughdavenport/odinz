@@ -23,9 +23,9 @@ error :: proc(message: string, code: EXIT_CODE = EXIT_CODE.software) -> ! {
     os.exit(int(code))
 }
 
-unreach :: proc(format: string, args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
+unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
     // if machine != nil do machine_dump(machine)
-    loc_format := "%s(%d:%d) %s: UNREACHABLE"
+    loc_format := "\n%s(%d:%d) %s: UNREACHABLE"
     fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
     fmt.eprintfln(format, ..args)
     unreachable()
