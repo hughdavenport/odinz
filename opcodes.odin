@@ -16,6 +16,14 @@ Opcode :: enum {
     SUB,
 }
 
+OpcodeType :: enum {
+    VAR,
+    ZERO,
+    ONE,
+    TWO,
+    EXT,
+}
+
 var_ops := [?]Opcode{
     0x00 = .CALL,
     0x01 = .STOREW,
@@ -33,6 +41,21 @@ two_ops := [?]Opcode{
     0x0F = .LOADW,
     0x14 = .ADD,
     0x15 = .SUB,
+}
+
+opcode :: proc(num: u8, type: OpcodeType) -> Opcode {
+    ops: []Opcode
+    switch type {
+        case .VAR: ops = var_ops[:]
+        case .ZERO: unimplemented()
+        case .ONE: ops = one_ops[:]
+        case .TWO: ops = two_ops[:]
+        case .EXT: unimplemented()
+    }
+    if int(num) > len(ops) || ops[num] == .UNKNOWN {
+        unimplemented(fmt.tprintf("%v[0x%02x] not implemented", type, num))
+    }
+    return ops[num]
 }
 
 opcode_needs_branch :: proc(opcode: Opcode) -> bool {
