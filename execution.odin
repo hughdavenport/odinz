@@ -80,12 +80,22 @@ execute :: proc(machine: ^Machine) {
                 a := machine_read_operand(machine, &instruction.operands[0])
                 jump_condition = a == 0
 
+            case .LOADB:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                array := machine_read_operand(machine, &instruction.operands[0])
+                index := machine_read_operand(machine, &instruction.operands[1])
+                machine_write_variable(machine, u16(instruction.store), u16(machine_read_byte(machine, u32(array + index))))
+
             case .LOADW:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 array := machine_read_operand(machine, &instruction.operands[0])
                 index := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
+
+            case .NEW_LINE:
+                fmt.println()
 
             case .PRINT:
                 fmt.print(instruction.zstring)

@@ -17,7 +17,9 @@ Opcode :: enum {
     JE,
     JUMP,
     JZ,
+    LOADB,
     LOADW,
+    NEW_LINE,
     PRINT,
     PUT_PROP,
     RET,
@@ -35,6 +37,7 @@ var_ops := [?]Opcode{
 
 zero_ops := [?]Opcode{
     0x02 = .PRINT,
+    0x0B = .NEW_LINE,
 }
 
 one_ops := [?]Opcode{
@@ -48,6 +51,7 @@ two_ops := [?]Opcode{
     0x0A = .TEST_ATTR,
     0x0D = .STORE,
     0x0F = .LOADW,
+    0x10 = .LOADB,
     0x14 = .ADD,
     0x15 = .SUB,
 }
@@ -75,7 +79,7 @@ opcode_needs_branch :: proc(opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .LOADW, .JUMP, .PRINT, .PUT_PROP, .RET, .STORE, .STOREW, .SUB:
+        case .ADD, .CALL, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PUT_PROP, .RET, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -85,11 +89,12 @@ opcode_needs_store :: proc(opcode: Opcode) -> bool {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .ADD,
              .CALL,
+             .LOADB,
              .LOADW,
              .SUB: return true
 
         // Not needed, but good for detecting new instructions
-        case .JE, .JUMP, .JZ, .PRINT, .PUT_PROP, .RET, .STORE, .STOREW, .TEST_ATTR:
+        case .JE, .JUMP, .JZ, .NEW_LINE, .PRINT, .PUT_PROP, .RET, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -100,7 +105,7 @@ opcode_needs_zstring :: proc(opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADW, .PUT_PROP, .RET, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .CALL, .JE, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PUT_PROP, .RET, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

@@ -56,7 +56,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .ADD,
              .JE,
              .JZ,
+             .LOADB,
              .LOADW,
+             .NEW_LINE,
              .RET,
              .STOREW,
              .SUB:
