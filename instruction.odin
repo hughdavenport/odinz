@@ -23,6 +23,7 @@ Instruction :: struct {
     branch_condition: bool,
     // TODO zstring type
     has_zstring: bool,
+    zstring: string,
     address: u32,
     length: u8,
 }
@@ -63,7 +64,14 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
     instruction.has_zstring = opcode_needs_zstring(instruction.opcode)
 
-    if instruction.has_zstring do unimplemented("read zstring")
+    if instruction.has_zstring {
+    fmt.println(instruction)
+        length: u8 = 0
+        instruction.zstring = zstring_read(machine, instruction.address + u32(instruction.length), &length)
+        instruction.length += length
+    fmt.println(instruction)
+    unreach("remove the formats if correct")
+    }
 }
 
 @(private="file")

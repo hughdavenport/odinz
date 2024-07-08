@@ -87,31 +87,49 @@ delete_zstring :: proc(zstring: ZString) {
     strings.builder_destroy(zstring.sb)
 }
 
-zstring_dump :: proc(machine: ^Machine, address: u16, length: u8 = 0) {
+zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> string {
     sb, err := strings.builder_make_none()
     if err != nil do unreach("Buy more RAM: %v", err, machine=machine);
     zstring := ZString{sb = &sb}
     defer delete_zstring(zstring)
-    if length > 0 {
-        for i: u8 = 0; i < length; i = i + 1 {
-            word := machine_read_word(machine, u32(address + u16(i * 2)))
+    if length != nil && length^ > 0 {
+        for i: u8 = 0; i < length^; i = i + 1 {
+            word := machine_read_word(machine, address + u32(i) * 2)
 
             zstring_process_zchar(machine, &zstring, u8((word >> 10) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 5) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
-            if i < length - 1 && bit(u8(word >> 8), 7) {
+            if i < length^ - 1 && bit(u8(word >> 8), 7) {
                 unreach("Not the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is set\n" +
                         "Processed %d words, zstring so far is \"%s\", and this word just processed is 0b%16b",
-                        length, address, i, strings.to_string(zstring.sb^), word)
+                        length^, address, i, strings.to_string(zstring.sb^), word)
             }
-            if i == length - 1 && !bit(u8(word >> 8), 7) {
+            if i == length^ - 1 && !bit(u8(word >> 8), 7) {
                 unreach("On the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is NOT set\n" +
                         "Zstring is \"%s\", and this word just processed is 0b%16b",
-                        length, address, strings.to_string(zstring.sb^), word)
+                        length^, address, strings.to_string(zstring.sb^), word)
             }
         }
-        fmt.print(strings.to_string(zstring.sb^))
     } else {
-        fmt.println(); unimplemented()
+        i := 0
+        for ; ; i += 2 {
+            word := machine_read_word(machine, address + u32(i))
+            fmt.printfln("got word %02x %08b @0x%04x, string so far %s",
+                        word, word, address + u32(i), strings.to_string(zstring.sb^))
+
+            zstring_process_zchar(machine, &zstring, u8((word >> 10) & 0b11111))
+            zstring_process_zchar(machine, &zstring, u8((word >> 5) & 0b11111))
+            zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
+            if bit(u8(word >> 8), 7) do break
+        }
+        if length != nil do length^ = u8(i)
     }
+    ret, err2 := strings.clone(strings.to_string(zstring.sb^))
+    if err2 != nil do unreach("Buy more RAM: %v", err2, machine=machine)
+    return ret
+}
+
+zstring_dump :: proc(machine: ^Machine, address: u32, length: u8 = 0) {
+    len := length
+    fmt.print(zstring_read(machine, address, &len))
 }

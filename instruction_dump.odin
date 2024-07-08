@@ -92,7 +92,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             return
 
         case .PRINT:
-            unimplemented()
+            fmt.printf("\"%s\"", instruction.zstring)
 
         case .PUT_PROP,
              .TEST_ATTR:

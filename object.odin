@@ -24,7 +24,7 @@ object_dump :: proc(machine: ^Machine, object_number: u16) {
     length := machine_read_byte(machine, u32(properties))
 
     if length == 0 do unreach("Dumping object %d failed. String of length 0", object_number, machine=machine);
-    zstring_dump(machine, properties + 1, length)
+    zstring_dump(machine, u32(properties) + 1, length)
 }
 
 object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) -> bool {
