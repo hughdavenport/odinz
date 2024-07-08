@@ -59,6 +59,16 @@ execute :: proc(machine: ^Machine) {
                     append(&machine.frames, routine)
                 }
 
+            case .INC_CHK:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                value := machine_read_operand(machine, &instruction.operands[1])
+                x := machine_read_variable(machine, variable)
+                x += 1
+                machine_write_variable(machine, variable, x)
+                jump_condition = x > value
+
             case .JE:
                 assert(len(instruction.operands) > 1)
                 assert(instruction.has_branch)

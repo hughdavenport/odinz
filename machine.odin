@@ -75,22 +75,16 @@ machine_write_global :: proc(machine: ^Machine, global: u16, value: u16) {
     machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
 }
 
-machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
-    switch operand.type {
-    case .SMALL_CONSTANT, .LARGE_CONSTANT: return operand.value
-    case .VARIABLE:
-        variable := operand.value
-        current_frame := &machine.frames[len(machine.frames) - 1]
-        switch variable {
-            case 0: return pop(&current_frame.stack)
-            case 1..<16: return current_frame.variables[variable - 1]
-            case 16..<255: return machine_read_global(machine, variable - 16)
-            case:
-                unreach("Error while reading variable. Unexpected number %d",
-                        variable, machine=machine)
-        }
+machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
+    current_frame := &machine.frames[len(machine.frames) - 1]
+    switch variable {
+        case 0: return pop(&current_frame.stack)
+        case 1..<16: return current_frame.variables[variable - 1]
+        case 16..<255: return machine_read_global(machine, variable - 16)
+        case:
+            unreach("Error while reading variable. Unexpected number %d",
+                    variable, machine=machine)
     }
-    unreach("Error while reading operand", machine=machine)
 }
 
 machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
@@ -101,8 +95,16 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
         case 16..<255: machine_write_global(machine, variable - 16, value)
         case:
             unreach("Error while writing variable. Unexpected number %d",
-                    value, machine=machine)
+                    variable, machine=machine)
     }
+}
+
+machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
+    switch operand.type {
+        case .SMALL_CONSTANT, .LARGE_CONSTANT: return operand.value
+        case .VARIABLE: return machine_read_variable(machine, operand.value)
+    }
+    unreach("Error while reading operand", machine=machine)
 }
 
 initialise_machine :: proc(machine: ^Machine) {
