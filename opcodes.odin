@@ -87,13 +87,12 @@ opcode_needs_branch :: proc(opcode: Opcode) -> bool {
     switch opcode {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .INC_CHK,
-             .INSERT_OBJ,
              .JE,
              .JZ,
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB:
     }
     return false
 }

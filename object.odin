@@ -67,3 +67,60 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
         unimplemented("V4+ property tables")
     }
 }
+
+object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_number: u16) {
+    assert(object_number != 0)
+    assert(destination_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    dest := object_addr(machine, destination_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        assert(destination_number <= 255)
+        parent: u16 = 4
+        sibling: u16 = 5
+        child: u16 = 6
+        // move obj to be dest's child
+
+        //  update obj's sibling's parent to be obj's parent
+        obj_sibling_number := machine_read_byte(machine, u32(obj + sibling))
+        if obj_sibling_number != 0 {
+            obj_parent_number := machine_read_byte(machine, u32(obj + parent))
+            obj_sibling := object_addr(machine, u16(obj_sibling_number))
+            machine_write_byte(machine, u32(obj_sibling + parent), obj_parent_number)
+        }
+
+        //  update obj's sibling to be dest's child
+        dest_child_number := machine_read_byte(machine, u32(dest + child))
+        machine_write_byte(machine, u32(obj + sibling), dest_child_number)
+
+        //  update dest's child to be obj
+        machine_write_byte(machine, u32(dest + child), u8(object_number))
+
+        //  update obj's parent to be dest
+        machine_write_byte(machine, u32(obj + parent), u8(destination_number))
+    } else {
+        parent: u16 = 6
+        sibling: u16 = 8
+        child: u16 = 10
+        // move obj to be dest's child
+
+        //  update obj's sibling's parent to be obj's parent
+        obj_sibling_number := machine_read_word(machine, u32(obj + sibling))
+        if obj_sibling_number != 0 {
+            obj_parent_number := machine_read_word(machine, u32(obj + parent))
+            obj_sibling := object_addr(machine, obj_sibling_number)
+            machine_write_word(machine, u32(obj_sibling + parent), obj_parent_number)
+        }
+
+        //  update obj's sibling to be dest's child
+        dest_child_number := machine_read_word(machine, u32(dest + child))
+        machine_write_word(machine, u32(obj + sibling), dest_child_number)
+
+        //  update dest's child to be obj
+        machine_write_word(machine, u32(dest + child), object_number)
+
+        //  update obj's parent to be dest
+        machine_write_word(machine, u32(obj + parent), destination_number)
+    }
+}

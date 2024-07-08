@@ -69,7 +69,10 @@ execute :: proc(machine: ^Machine) {
                 jump_condition = x > value
 
             case .INSERT_OBJ:
-                unimplemented()
+                assert(len(instruction.operands) == 2)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                destination := machine_read_operand(machine, &instruction.operands[1])
+                object_insert_object(machine, object, destination)
 
             case .JE:
                 assert(len(instruction.operands) > 1)
@@ -156,7 +159,6 @@ execute :: proc(machine: ^Machine) {
                 variable := machine_read_operand(machine, &instruction.operands[0])
                 value := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, variable, value)
-
 
             case .STOREW:
                 assert(len(instruction.operands) == 3)

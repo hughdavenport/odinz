@@ -135,6 +135,7 @@ instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byt
     }
 }
 
+
 @(private="file")
 instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
     instruction.opcode = opcode(byte & 0b11111, .TWO)
