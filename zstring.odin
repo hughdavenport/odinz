@@ -46,11 +46,15 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
             switch zchar {
                 case 0: fmt.sbprint(zstring.sb, " ")
                 case 1:
-                    if header.version >= 2 do unimplemented("abbrevs")
-                    else do fmt.sbprintln(zstring.sb)
+                    if header.version >= 2 {
+                        zstring.char = zchar
+                        zstring.mode = .ABBREV
+                    } else do fmt.sbprintln(zstring.sb)
                 case 2, 3:
-                    if header.version >= 3 do unimplemented("abbrevs")
-                    else do unimplemented("shift lock")
+                    if header.version >= 3 {
+                        zstring.char = zchar
+                        zstring.mode = .ABBREV
+                    } else do unimplemented("shift lock")
                 case 4:
                     if header.version >= 3 do zstring.mode = .A1
                     else do unimplemented("shift lock")
@@ -60,10 +64,15 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
                 case 6..=31:
                     switch zstring.mode {
                         case .A0: fmt.sbprint(zstring.sb, zstring_alphabet_0[zchar - 6])
-                        case .A1: fmt.sbprint(zstring.sb, zstring_alphabet_1[zchar - 6])
+                        case .A1:
+                            fmt.sbprint(zstring.sb, zstring_alphabet_1[zchar - 6])
+                            if header.version >= 3 do zstring.mode = .A0
                         case .A2:
                             if zchar == 6 do zstring.mode = .ZSCII_1
-                            else do fmt.sbprint(zstring.sb, zstring_alphabet_2[zchar - 6])
+                            else {
+                                fmt.sbprint(zstring.sb, zstring_alphabet_2[zchar - 6])
+                                if header.version >= 3 do zstring.mode = .A0
+                            }
 
                         case .ZSCII_1, .ZSCII_2, .ABBREV:
                             fallthrough
@@ -76,7 +85,11 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
 
         case .ZSCII_1: unimplemented()
         case .ZSCII_2: unimplemented()
-        case .ABBREV: unimplemented()
+        case .ABBREV:
+            index := 32 * u32(zstring.char - 1) + u32(zchar)
+            addr := u32(machine_read_word(machine, u32(header.abbreviations) + 2 * index))
+            fmt.sbprint(zstring.sb, zstring_read(machine, addr * 2, nil))
+            zstring.mode = .A0
 
         case:
             unreach("Parsing zstring failed. Invalid mode", machine=machine);
@@ -114,15 +127,13 @@ zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> stri
         i := 0
         for ; ; i += 2 {
             word := machine_read_word(machine, address + u32(i))
-            fmt.printfln("got word %02x %08b @0x%04x, string so far %s",
-                        word, word, address + u32(i), strings.to_string(zstring.sb^))
 
             zstring_process_zchar(machine, &zstring, u8((word >> 10) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 5) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
             if bit(u8(word >> 8), 7) do break
         }
-        if length != nil do length^ = u8(i)
+        if length != nil do length^ = u8(i + 2)
     }
     ret, err2 := strings.clone(strings.to_string(zstring.sb^))
     if err2 != nil do unreach("Buy more RAM: %v", err2, machine=machine)

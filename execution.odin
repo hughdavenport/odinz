@@ -88,7 +88,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
 
             case .PRINT:
-                unimplemented()
+                fmt.print(instruction.zstring)
 
             case .PUT_PROP:
                 assert(len(instruction.operands) == 3)

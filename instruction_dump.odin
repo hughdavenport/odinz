@@ -135,9 +135,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         }
     }
 
-    if instruction.has_zstring {
-        unimplemented("print zstring")
-    }
+    // Z-string's are handled in switch case (only PRINT and PRINT_RET use them)
 
     fmt.println()
 }
