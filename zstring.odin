@@ -144,3 +144,34 @@ zstring_dump :: proc(machine: ^Machine, address: u32, length: u8 = 0) {
     len := length
     fmt.print(zstring_read(machine, address, &len))
 }
+
+zstring_output_zscii :: proc(machine: ^Machine, char: u16) {
+    header := machine_header(machine)
+    assert(char <= 1023)
+    // Must be defined for output in ZSCII (S3.8 in specs)
+    switch char {
+        case 0: // null, no-op for output
+        case 1..=7: unreach()
+        case 8: unreach() // delete, undefined for output
+        case 9:
+            if header.version <= 6 do unreach() // undefined
+            fmt.print('\t')
+        case 10: unreach()
+        case 11:
+            if header.version <= 6 do unreach() // undefined
+            fmt.print("  ")
+        case 12: unreach()
+        case 13: fmt.println()
+        case 14..=26: unreach()
+        case 27:
+            // ESC. Need to be careful about dodgy escape codes
+            unimplemented()
+        case 28..=31: unreach()
+        case 32..=126: fmt.printf("%c", char)
+        case 127, 128: unreach()
+        case 129..=154: unreach() // undefined for output
+        case 155..=251:
+            unimplemented("Extra characters")
+        case: unreach()
+    }
+}

@@ -118,6 +118,11 @@ execute :: proc(machine: ^Machine) {
                 assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
 
+            case .PRINT_CHAR:
+                assert(len(instruction.operands) == 1)
+                char := machine_read_operand(machine, &instruction.operands[0])
+                zstring_output_zscii(machine, char)
+
             case .PRINT_NUM:
                 assert(len(instruction.operands) == 1)
                 value := i16(machine_read_operand(machine, &instruction.operands[0]))
@@ -130,6 +135,12 @@ execute :: proc(machine: ^Machine) {
                 value := machine_read_operand(machine, &instruction.operands[2])
 
                 object_put_property(machine, object, property, value)
+
+            case .RTRUE:
+                assert(len(instruction.operands) == 0)
+                pop(&machine.frames)
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
+                delete_frame(current_frame)
 
             case .RET:
                 assert(len(instruction.operands) == 1)

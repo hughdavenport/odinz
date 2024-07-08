@@ -24,10 +24,8 @@ frame_next_byte :: proc(machine: ^Machine, frame: ^Frame) -> u8 {
 
 @(private="file")
 frame_next_word :: proc(machine: ^Machine, frame: ^Frame) -> u16 {
-    high := machine_read_byte(machine, frame.pc)
-    low := machine_read_byte(machine, frame.pc)
-    frame.pc += 2
-    return u16(high) << 16 + u16(low)
+    defer frame.pc += 2
+    return machine_read_word(machine, frame.pc)
 }
 
 routine_read :: proc(machine: ^Machine, address: u32) -> (frame: Frame) {

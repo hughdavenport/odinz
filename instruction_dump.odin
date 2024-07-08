@@ -61,8 +61,10 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .LOADB,
              .LOADW,
              .NEW_LINE,
+             .PRINT_CHAR,
              .PRINT_NUM,
              .RET,
+             .RTRUE,
              .STOREW,
              .SUB:
             operands_dump(instruction.operands[:])
