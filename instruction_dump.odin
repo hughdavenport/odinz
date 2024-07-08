@@ -84,6 +84,21 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
                 fmt.print(")")
             }
 
+        case .INSERT_OBJ,
+             .PUT_PROP,
+             .TEST_ATTR:
+            assert(len(instruction.operands) > 1)
+            switch instruction.operands[0].type {
+                case .SMALL_CONSTANT, .LARGE_CONSTANT:
+                    fmt.print('"')
+                    object_dump(machine, instruction.operands[0].value)
+                    fmt.print('"')
+                case .VARIABLE:
+                    operand_dump(instruction.operands[0])
+            }
+            fmt.print(",")
+            operands_dump(instruction.operands[1:])
+
         case .JUMP:
             assert(len(instruction.operands) == 1)
             offset := i16(machine_read_operand(machine, &instruction.operands[0]))
@@ -100,20 +115,6 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .PRINT:
             fmt.printf("\"%s\"", instruction.zstring)
-
-        case .PUT_PROP,
-             .TEST_ATTR:
-            assert(len(instruction.operands) > 1)
-            switch instruction.operands[0].type {
-                case .SMALL_CONSTANT, .LARGE_CONSTANT:
-                    fmt.print('"')
-                    object_dump(machine, instruction.operands[0].value)
-                    fmt.print('"')
-                case .VARIABLE:
-                    operand_dump(instruction.operands[0])
-            }
-            fmt.print(",")
-            operands_dump(instruction.operands[1:])
 
         case .STORE:
             assert(len(instruction.operands) == 2)

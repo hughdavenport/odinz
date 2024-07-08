@@ -68,6 +68,9 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, variable, x)
                 jump_condition = x > value
 
+            case .INSERT_OBJ:
+                unimplemented()
+
             case .JE:
                 assert(len(instruction.operands) > 1)
                 assert(instruction.has_branch)
