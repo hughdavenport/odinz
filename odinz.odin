@@ -36,10 +36,10 @@ main :: proc() {
     if len(os.args) != 2 do usage_and_exit(progname)
 
     romfile := os.args[1]
-    if !os.exists(romfile) do error(fmt.tprint("File '%s' does not exist", romfile), EXIT_CODE.no_input)
+    if !os.exists(romfile) do error(fmt.tprintf("File '%s' does not exist", romfile), EXIT_CODE.no_input)
 
     data, ok := os.read_entire_file(romfile)
-    if !ok do error(fmt.tprint("Could not read '%s'", romfile), EXIT_CODE.io_error)
+    if !ok do error(fmt.tprintf("Could not read '%s'", romfile), EXIT_CODE.io_error)
     defer delete(data)
     machine := &Machine{romfile=romfile, memory=data}
     initialise_machine(machine)
