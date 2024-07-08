@@ -105,8 +105,18 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
             }
         }
     } else {
-        fmt.printfln("%08b", byte)
-        unimplemented("2OP") // maybe just the same?
+        instruction.opcode = opcode(num, .TWO)
+        instruction.operands = make([dynamic]Operand, 0, 2)
+        assert(operand_types & 0xF == 0xF) // Needs to be omitted for 2OP
+        for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
+            if bit(operand_types, 7) && !bit(operand_types, 6) {
+                instruction_read_operand(machine, instruction, .VARIABLE)
+            } else if bit(operand_types, 6) {
+                instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
+            } else {
+                instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
+            }
+        }
     }
 }
 

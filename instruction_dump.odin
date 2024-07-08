@@ -54,11 +54,13 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
     switch instruction.opcode {
         case .UNKNOWN: unreach("Invalid opcode while dumping instruction", machine=machine)
         case .ADD,
+             .AND,
              .JE,
              .JZ,
              .LOADB,
              .LOADW,
              .NEW_LINE,
+             .PRINT_NUM,
              .RET,
              .STOREW,
              .SUB:

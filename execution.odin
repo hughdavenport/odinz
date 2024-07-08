@@ -38,6 +38,13 @@ execute :: proc(machine: ^Machine) {
                 b := i16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), u16(a + b))
 
+            case .AND:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := u16(machine_read_operand(machine, &instruction.operands[0]))
+                b := u16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), a & b)
+
             case .CALL:
                 assert(len(instruction.operands) > 0)
                 assert(instruction.operands[0].type != .VARIABLE)
@@ -98,7 +105,13 @@ execute :: proc(machine: ^Machine) {
                 fmt.println()
 
             case .PRINT:
+                assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
+
+            case .PRINT_NUM:
+                assert(len(instruction.operands) == 1)
+                value := i16(machine_read_operand(machine, &instruction.operands[0]))
+                fmt.print(value)
 
             case .PUT_PROP:
                 assert(len(instruction.operands) == 3)
