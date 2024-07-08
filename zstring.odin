@@ -88,6 +88,7 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
         case .ABBREV:
             index := 32 * u32(zstring.char - 1) + u32(zchar)
             addr := u32(machine_read_word(machine, u32(header.abbreviations) + 2 * index))
+            // addr is a "word address" which is only used by abbreviations. S1.1.2 in spec
             fmt.sbprint(zstring.sb, zstring_read(machine, addr * 2, nil))
             zstring.mode = .A0
 
