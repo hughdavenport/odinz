@@ -17,7 +17,7 @@ machine_header :: proc(machine: ^Machine) -> ^Header {
     return transmute(^Header)ptr;
 }
 
-machine_dump :: proc(machine: ^Machine, to_disk := false) {
+machine_dump :: proc(machine: ^Machine, to_disk := false, dump_memory := false) {
     if to_disk {
         if !os.write_entire_file("machine.dump", machine.memory) {
             unreach("Error writing machine dump")
@@ -34,13 +34,15 @@ machine_dump :: proc(machine: ^Machine, to_disk := false) {
     for frame in machine.frames {
         fmt.println(frame)
     }
-    fmt.println("memory:")
-    for i := 0; i < len(machine.memory); i += 0x10 {
-        fmt.printf("%06x ", i)
-        for b := 0; b < 0x10; b += 2 {
-            fmt.printf(" %02x%02x", machine.memory[i + b], machine.memory[i + b + 1])
+    if dump_memory {
+        fmt.println("memory:")
+        for i := 0; i < len(machine.memory); i += 0x10 {
+            fmt.printf("%06x ", i)
+            for b := 0; b < 0x10; b += 2 {
+                fmt.printf(" %02x%02x", machine.memory[i + b], machine.memory[i + b + 1])
+            }
+            fmt.println()
         }
-        fmt.println()
     }
 }
 

@@ -11,19 +11,18 @@ execute :: proc(machine: ^Machine) {
     }
 
     for {
-        current_frame := &machine.frames[len(machine.frames) - 1]
-
         machine_dump(machine, to_disk = true)
-        fmt.printfln("PC = %04x", current_frame.pc)
-        // fmt.printfln("%v", current_frame^)
-        // fmt.printfln("frames = %v", machine.frames)
 
+        current_frame := &machine.frames[len(machine.frames) - 1]
 
         instruction := instruction_read(machine, current_frame.pc)
         current_frame.pc += u32(instruction.length)
 
         for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
         instruction_dump(machine, &instruction, len(machine.frames) - 1)
+
+        // fmt.printfln("Frame = %v", current_frame^)
+        // fmt.printfln("All frames = %v", machine.frames)
 
         jump_condition := false
 
@@ -181,7 +180,6 @@ execute :: proc(machine: ^Machine) {
 
 
         if instruction.has_branch && jump_condition == instruction.branch_condition {
-            fmt.println("Jumping")
             offset := i16(instruction.branch_offset)
             switch offset {
                 case 0: unimplemented("RFALSE")
