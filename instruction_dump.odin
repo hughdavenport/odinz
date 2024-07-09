@@ -34,6 +34,7 @@ operands_dump :: proc(operands: []Operand) {
 }
 
 instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent := 0) {
+    header := machine_header(machine)
     fmt.printf("% 5x: ", instruction.address)
     for byte in machine.memory[instruction.address:][:instruction.length] {
         fmt.printf(" %02x", byte)
@@ -63,6 +64,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .NEW_LINE,
              .PRINT_CHAR,
              .PRINT_NUM,
+             .PUSH,
              .RET,
              .RTRUE,
              .STOREW,
@@ -112,6 +114,16 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             }
             fmt.println()
             return
+
+        case .PULL:
+            assert(len(instruction.operands) == 1)
+            if header.version >= 6 {
+                assert(instruction.has_store)
+                unimplemented()
+            } else {
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                variable_dump(variable, store=true)
+            }
 
         case .PRINT:
             fmt.printf("\"%s\"", instruction.zstring)

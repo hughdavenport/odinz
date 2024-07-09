@@ -26,6 +26,8 @@ Opcode :: enum {
     PRINT,
     PRINT_CHAR,
     PRINT_NUM,
+    PULL,
+    PUSH,
     PUT_PROP,
     RET,
     RTRUE,
@@ -41,6 +43,8 @@ var_ops := [?]Opcode{
     0x03 = .PUT_PROP,
     0x05 = .PRINT_CHAR,
     0x06 = .PRINT_NUM,
+    0x08 = .PUSH,
+    0x09 = .PULL,
 }
 
 zero_ops := [?]Opcode{
@@ -77,13 +81,13 @@ opcode :: proc(num: u8, type: OpcodeType) -> Opcode {
         case .TWO: ops = two_ops[:]
         case .EXT: unimplemented()
     }
-    if int(num) > len(ops) || ops[num] == .UNKNOWN {
+    if int(num) >= len(ops) || ops[num] == .UNKNOWN {
         unimplemented(fmt.tprintf("%v[0x%02x] not implemented", type, num))
     }
     return ops[num]
 }
 
-opcode_needs_branch :: proc(opcode: Opcode) -> bool {
+opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .INC_CHK,
@@ -92,12 +96,13 @@ opcode_needs_branch :: proc(opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB:
     }
     return false
 }
 
-opcode_needs_store :: proc(opcode: Opcode) -> bool {
+opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
+    header := machine_header(machine)
     switch opcode {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .ADD,
@@ -107,19 +112,23 @@ opcode_needs_store :: proc(opcode: Opcode) -> bool {
              .LOADW,
              .SUB: return true
 
+        case .PULL:
+            if header.version >= 6 do return true
+            else do return false
+
         // Not needed, but good for detecting new instructions
-        case .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .TEST_ATTR:
+        case .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
 
-opcode_needs_zstring :: proc(opcode: Opcode) -> bool {
+opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

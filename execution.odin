@@ -133,6 +133,22 @@ execute :: proc(machine: ^Machine) {
                 value := i16(machine_read_operand(machine, &instruction.operands[0]))
                 fmt.print(value)
 
+            case .PULL:
+                assert(len(instruction.operands) == 1)
+                if header.version >= 6 {
+                    assert(instruction.has_store)
+                    unimplemented()
+                } else {
+                    variable := machine_read_operand(machine, &instruction.operands[0])
+                    value := pop(&current_frame.stack)
+                    machine_write_variable(machine, variable, value)
+                }
+
+            case .PUSH:
+                assert(len(instruction.operands) == 1)
+                value := machine_read_operand(machine, &instruction.operands[0])
+                append(&current_frame.stack, value)
+
             case .PUT_PROP:
                 assert(len(instruction.operands) == 3)
                 object := machine_read_operand(machine, &instruction.operands[0])

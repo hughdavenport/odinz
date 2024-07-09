@@ -37,14 +37,14 @@ instruction_next_byte :: proc(machine: ^Machine, instruction: ^Instruction) -> u
 
 @(private="file")
 instruction_read_store :: proc(machine: ^Machine, instruction: ^Instruction) {
-    instruction.has_store = opcode_needs_store(instruction.opcode)
+    instruction.has_store = opcode_needs_store(machine, instruction.opcode)
 
     if instruction.has_store do instruction.store = instruction_next_byte(machine, instruction)
 }
 
 @(private="file")
 instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
-    instruction.has_branch = opcode_needs_branch(instruction.opcode)
+    instruction.has_branch = opcode_needs_branch(machine, instruction.opcode)
 
     if instruction.has_branch {
         byte := instruction_next_byte(machine, instruction)
@@ -62,7 +62,7 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
 
 @(private="file")
 instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
-    instruction.has_zstring = opcode_needs_zstring(instruction.opcode)
+    instruction.has_zstring = opcode_needs_zstring(machine, instruction.opcode)
 
     if instruction.has_zstring {
         length: u8 = 0
