@@ -88,12 +88,12 @@ instruction_read_operand :: proc(machine: ^Machine, instruction: ^Instruction, t
 }
 
 @(private="file")
-instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
+instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8, address: u32) {
     num := byte & 0b11111
     operand_types := instruction_next_byte(machine, instruction)
 
     if bit(byte, 5) {
-        instruction.opcode = opcode(num, .VAR)
+        instruction.opcode = opcode(num, .VAR, address)
         instruction.operands = make([dynamic]Operand, 0, 4)
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
             if bit(operand_types, 7) && !bit(operand_types, 6) {
@@ -105,7 +105,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
             }
         }
     } else {
-        instruction.opcode = opcode(num, .TWO)
+        instruction.opcode = opcode(num, .TWO, address)
         instruction.operands = make([dynamic]Operand, 0, 2)
         assert(operand_types & 0xF == 0xF) // Needs to be omitted for 2OP
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
@@ -121,12 +121,12 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 }
 
 @(private="file")
-instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
+instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8, address: u32) {
     num := byte & 0b1111
     if bit(byte, 4) && bit(byte, 5) {
-        instruction.opcode = opcode(num, .ZERO)
+        instruction.opcode = opcode(num, .ZERO, address)
     } else {
-        instruction.opcode = opcode(num, .ONE)
+        instruction.opcode = opcode(num, .ONE, address)
         instruction.operands = make([dynamic]Operand, 0, 1)
 
         if bit(byte, 5) do instruction_read_operand(machine, instruction, .VARIABLE)
@@ -137,8 +137,8 @@ instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byt
 
 
 @(private="file")
-instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8) {
-    instruction.opcode = opcode(byte & 0b11111, .TWO)
+instruction_read_long :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8, address: u32) {
+    instruction.opcode = opcode(byte & 0b11111, .TWO, address)
     instruction.operands = make([dynamic]Operand, 0, 2)
 
     if bit(byte, 6) do instruction_read_operand(machine, instruction, .VARIABLE)
@@ -153,14 +153,14 @@ instruction_read :: proc(machine: ^Machine, address: u32) -> (instruction: Instr
     byte := instruction_next_byte(machine, &instruction)
 
     if bit(byte, 7) && bit(byte, 6) {
-        instruction_read_variable(machine, &instruction, byte)
+        instruction_read_variable(machine, &instruction, byte, address)
     } else if bit(byte, 7) && !bit(byte, 6) {
-        instruction_read_short(machine, &instruction, byte)
+        instruction_read_short(machine, &instruction, byte, address)
     } else if byte == 0xBE {
         fmt.printfln("%08b", byte)
         unimplemented("instruction extended")
     } else {
-        instruction_read_long(machine, &instruction, byte)
+        instruction_read_long(machine, &instruction, byte, address)
     }
 
     instruction_read_store(machine, &instruction)

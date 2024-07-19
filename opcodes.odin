@@ -72,7 +72,7 @@ two_ops := [?]Opcode{
     0x15 = .SUB,
 }
 
-opcode :: proc(num: u8, type: OpcodeType) -> Opcode {
+opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
     ops: []Opcode
     switch type {
         case .VAR: ops = var_ops[:]
@@ -82,7 +82,7 @@ opcode :: proc(num: u8, type: OpcodeType) -> Opcode {
         case .EXT: unimplemented()
     }
     if int(num) >= len(ops) || ops[num] == .UNKNOWN {
-        unimplemented(fmt.tprintf("%v[0x%02x] not implemented", type, num))
+        unimplemented(fmt.tprintf("%x: %v[0x%02x] not implemented", address, type, num))
     }
     return ops[num]
 }

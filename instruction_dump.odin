@@ -33,6 +33,22 @@ operands_dump :: proc(operands: []Operand) {
     }
 }
 
+@(private="file")
+_object_dump :: proc(machine: ^Machine, operand: Operand) {
+    switch operand.type {
+        case .SMALL_CONSTANT, .LARGE_CONSTANT:
+            if object_has_name(machine, operand.value) {
+                fmt.print('"')
+                object_dump(machine, operand.value)
+                fmt.print('"')
+            } else {
+                operand_dump(operand)
+            }
+        case .VARIABLE:
+            operand_dump(operand)
+    }
+}
+
 instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent := 0) {
     header := machine_header(machine)
     fmt.printf("% 5x: ", instruction.address)
@@ -90,14 +106,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .PUT_PROP,
              .TEST_ATTR:
             assert(len(instruction.operands) > 1)
-            switch instruction.operands[0].type {
-                case .SMALL_CONSTANT, .LARGE_CONSTANT:
-                    fmt.print('"')
-                    object_dump(machine, instruction.operands[0].value)
-                    fmt.print('"')
-                case .VARIABLE:
-                    operand_dump(instruction.operands[0])
-            }
+            _object_dump(machine, instruction.operands[0])
             fmt.print(",")
             operands_dump(instruction.operands[1:])
 

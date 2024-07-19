@@ -19,11 +19,17 @@ object_properties :: proc(machine: ^Machine, object_number: u16) -> u16 {
     else do return machine_read_word(machine, u32(addr) + 12)
 }
 
+object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
+    properties := object_properties(machine, object_number)
+    length := machine_read_byte(machine, u32(properties))
+    return length != 0
+}
+
 object_dump :: proc(machine: ^Machine, object_number: u16) {
     properties := object_properties(machine, object_number)
     length := machine_read_byte(machine, u32(properties))
 
-    if length == 0 do unreach("Dumping object %d failed. String of length 0", object_number, machine=machine);
+    if length == 0 do return
     zstring_dump(machine, u32(properties) + 1, length)
 }
 
