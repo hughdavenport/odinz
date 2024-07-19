@@ -18,6 +18,7 @@ Opcode :: enum {
     INC_CHK,
     INSERT_OBJ,
     JE,
+    JIN,
     JUMP,
     JZ,
     LOADB,
@@ -31,6 +32,7 @@ Opcode :: enum {
     PUT_PROP,
     RET,
     RTRUE,
+    SET_ATTR,
     STORE,
     STOREW,
     SUB,
@@ -62,8 +64,10 @@ one_ops := [?]Opcode{
 two_ops := [?]Opcode{
     0x01 = .JE,
     0x05 = .INC_CHK,
+    0x06 = .JIN,
     0x09 = .AND,
     0x0A = .TEST_ATTR,
+    0x0B = .SET_ATTR,
     0x0D = .STORE,
     0x0E = .INSERT_OBJ,
     0x0F = .LOADW,
@@ -92,11 +96,12 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
         case .INC_CHK,
              .JE,
+             .JIN,
              .JZ,
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -117,7 +122,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
             else do return false
 
         // Not needed, but good for detecting new instructions
-        case .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .TEST_ATTR:
+        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -128,7 +133,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INC_CHK, .INSERT_OBJ, .JE, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

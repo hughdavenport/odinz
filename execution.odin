@@ -86,6 +86,13 @@ execute :: proc(machine: ^Machine) {
                     }
                 }
 
+            case .JIN:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                object1 := machine_read_operand(machine, &instruction.operands[0])
+                object2 := machine_read_operand(machine, &instruction.operands[1])
+                jump_condition = object_parent(machine, object1) == object2
+
             case .JUMP:
                 assert(len(instruction.operands) == 1)
                 // JUMP is different in that it takes the offset as an operand
@@ -169,6 +176,12 @@ execute :: proc(machine: ^Machine) {
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
+
+            case .SET_ATTR:
+                assert(len(instruction.operands) == 2)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                attribute := machine_read_operand(machine, &instruction.operands[1])
+                object_set_attr(machine, object, attribute)
 
             case .STORE:
                 assert(len(instruction.operands) == 2)

@@ -104,11 +104,18 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .INSERT_OBJ,
              .PUT_PROP,
+             .SET_ATTR,
              .TEST_ATTR:
             assert(len(instruction.operands) > 1)
             _object_dump(machine, instruction.operands[0])
             fmt.print(",")
             operands_dump(instruction.operands[1:])
+
+        case .JIN:
+            assert(len(instruction.operands) == 2)
+            _object_dump(machine, instruction.operands[0])
+            fmt.print(",")
+            _object_dump(machine, instruction.operands[1])
 
         case .JUMP:
             assert(len(instruction.operands) == 1)

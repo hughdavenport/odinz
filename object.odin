@@ -33,6 +33,18 @@ object_dump :: proc(machine: ^Machine, object_number: u16) {
     zstring_dump(machine, u32(properties) + 1, length)
 }
 
+object_set_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
+    header := machine_header(machine)
+    addr := object_addr(machine, object_number)
+    if header.version <= 3 do assert(attribute <= 32)
+    else do assert(attribute <= 48)
+
+    attribute_addr := u32(addr + (attribute / 8))
+    mask := u8(1 << (8 - (attribute % 8)))
+    orig := machine_read_byte(machine, attribute_addr)
+    machine_write_byte(machine, attribute_addr, orig | mask)
+}
+
 object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) -> bool {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
@@ -72,6 +84,25 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
     } else {
         unimplemented("V4+ property tables")
     }
+}
+
+object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        parent: u16 = 4
+        sibling: u16 = 5
+        child: u16 = 6
+        return u16(machine_read_byte(machine, u32(obj + parent)))
+    } else {
+        parent: u16 = 6
+        sibling: u16 = 8
+        child: u16 = 10
+        return machine_read_word(machine, u32(obj + parent))
+    }
+    unreach()
 }
 
 object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_number: u16) {
