@@ -15,6 +15,7 @@ Opcode :: enum {
     ADD,
     AND,
     CALL,
+    GET_PARENT,
     INC_CHK,
     INSERT_OBJ,
     JE,
@@ -27,6 +28,7 @@ Opcode :: enum {
     PRINT,
     PRINT_CHAR,
     PRINT_NUM,
+    PRINT_OBJ,
     PULL,
     PUSH,
     PUT_PROP,
@@ -57,6 +59,8 @@ zero_ops := [?]Opcode{
 
 one_ops := [?]Opcode{
     0x00 = .JZ,
+    0x03 = .GET_PARENT,
+    0x0A = .PRINT_OBJ,
     0x0B = .RET,
     0x0C = .JUMP,
 }
@@ -116,7 +120,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .GET_PARENT, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -128,6 +132,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD,
              .AND,
              .CALL,
+             .GET_PARENT,
              .LOADB,
              .LOADW,
              .SUB: return true
@@ -137,7 +142,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
             else do return false
 
         // Not needed, but good for detecting new instructions
-        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
+        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -148,7 +153,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_PARENT, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

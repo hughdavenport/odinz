@@ -102,13 +102,14 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
                 fmt.print(")")
             }
 
-        case .INSERT_OBJ,
+        case .GET_PARENT,
+             .INSERT_OBJ,
              .PUT_PROP,
              .SET_ATTR,
              .TEST_ATTR:
-            assert(len(instruction.operands) > 1)
+            assert(len(instruction.operands) >= 1)
             _object_dump(machine, instruction.operands[0])
-            fmt.print(",")
+            if len(instruction.operands) >= 2 do fmt.print(",")
             operands_dump(instruction.operands[1:])
 
         case .JIN:
@@ -143,6 +144,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .PRINT:
             fmt.printf("\"%s\"", instruction.zstring)
+
+        case .PRINT_OBJ:
+            _object_dump(machine, instruction.operands[0])
 
         case .STORE:
             assert(len(instruction.operands) == 2)

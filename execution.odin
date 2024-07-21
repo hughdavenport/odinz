@@ -58,6 +58,13 @@ execute :: proc(machine: ^Machine) {
                     append(&machine.frames, routine)
                 }
 
+            case .GET_PARENT:
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                parent := object_parent(machine, object)
+                machine_write_variable(machine, u16(instruction.store), parent)
+
             case .INC_CHK:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
@@ -139,6 +146,11 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 1)
                 value := i16(machine_read_operand(machine, &instruction.operands[0]))
                 fmt.print(value)
+
+            case .PRINT_OBJ:
+                assert(len(instruction.operands) == 1)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                object_dump(machine, object)
 
             case .PULL:
                 assert(len(instruction.operands) == 1)
