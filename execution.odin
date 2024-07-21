@@ -277,8 +277,12 @@ execute :: proc(machine: ^Machine) {
         if instruction.has_branch && jump_condition == instruction.branch_condition {
             offset := i16(instruction.branch_offset)
             switch offset {
-                case 0: unimplemented("RFALSE")
-                case 1: unimplemented("RTRUE")
+                case 0, 1:
+                    pop(&machine.frames)
+                    if current_frame.has_store {
+                        machine_write_variable(machine, u16(current_frame.store), u16(offset) & 1)
+                    }
+                    delete_frame(current_frame)
                 case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
             }
         }
