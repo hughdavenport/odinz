@@ -96,6 +96,7 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
         instruction.opcode = opcode(num, .VAR, address)
         instruction.operands = make([dynamic]Operand, 0, 4)
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
+            if len(instruction.operands) == 4 do break
             if bit(operand_types, 7) && !bit(operand_types, 6) {
                 instruction_read_operand(machine, instruction, .VARIABLE)
             } else if bit(operand_types, 6) {
@@ -106,9 +107,10 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
         }
     } else {
         instruction.opcode = opcode(num, .TWO, address)
-        instruction.operands = make([dynamic]Operand, 0, 2)
-        assert(operand_types & 0xF == 0xF) // Needs to be omitted for 2OP
+        instruction.operands = make([dynamic]Operand, 0, 4)
+        // The specs say 2OP, but some opcodes (i.e. JE) allow more
         for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
+            if len(instruction.operands) == 4 do break
             if bit(operand_types, 7) && !bit(operand_types, 6) {
                 instruction_read_operand(machine, instruction, .VARIABLE)
             } else if bit(operand_types, 6) {
@@ -172,5 +174,4 @@ instruction_read :: proc(machine: ^Machine, address: u32) -> (instruction: Instr
 
 delete_instruction :: proc(instruction: Instruction) {
     delete(instruction.operands)
-    // TODO delete zstrings
 }
