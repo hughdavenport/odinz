@@ -86,7 +86,22 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
         case .EXT: unimplemented()
     }
     if int(num) >= len(ops) || ops[num] == .UNKNOWN {
-        unimplemented(fmt.tprintf("%x: %v[0x%02x] not implemented", address, type, num))
+        type_s: string
+        offset: u8
+        switch type {
+            case .VAR:
+                type_s = "VAR"
+                offset = 224
+            case .ZERO:
+                type_s = "0OP"
+                offset = 176
+            case .ONE:
+                type_s = "1OP"
+                offset = 128
+            case .TWO: type_s = "2OP"
+            case .EXT: type_s = "EXT"
+        }
+        unimplemented(fmt.tprintf("\n%x: %s:%d %02x", address, type_s, num + offset, num))
     }
     return ops[num]
 }
