@@ -65,6 +65,17 @@ execute :: proc(machine: ^Machine) {
                     }
                 }
 
+            case .GET_CHILD:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_child
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                assert(instruction.has_branch)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                child := object_child(machine, object)
+                machine_write_variable(machine, u16(instruction.store), child)
+                jump_condition = child != 0
+
             case .GET_PARENT:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_parent
                 assert(len(instruction.operands) == 1)

@@ -16,6 +16,7 @@ Opcode :: enum {
     ADD,
     AND,
     CALL,
+    GET_CHILD,
     GET_PARENT,
     GET_PROP,
     INC_CHK,
@@ -64,6 +65,7 @@ zero_ops := [?]Opcode{
 // https://zspec.jaredreisinger.com/14-opcode-table
 one_ops := [?]Opcode{
     0x00 = .JZ,
+    0x02 = .GET_CHILD,
     0x03 = .GET_PARENT,
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
@@ -120,7 +122,8 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
         case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
-        case .INC_CHK,
+        case .GET_CHILD,
+             .INC_CHK,
              .JE,
              .JIN,
              .JZ,
@@ -139,6 +142,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD,
              .AND,
              .CALL,
+             .GET_CHILD,
              .GET_PARENT,
              .GET_PROP,
              .LOADB,
@@ -161,7 +165,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

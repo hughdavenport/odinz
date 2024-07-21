@@ -118,6 +118,25 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
     }
 }
 
+object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        parent: u16 = 4
+        sibling: u16 = 5
+        child: u16 = 6
+        return u16(machine_read_byte(machine, u32(obj + child)))
+    } else {
+        parent: u16 = 6
+        sibling: u16 = 8
+        child: u16 = 10
+        return machine_read_word(machine, u32(obj + child))
+    }
+    unreach()
+}
+
 object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
     assert(object_number != 0)
     header := machine_header(machine)
