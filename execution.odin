@@ -59,6 +59,10 @@ execute :: proc(machine: ^Machine) {
                     routine.has_store = instruction.has_store
                     routine.store = instruction.store
                     append(&machine.frames, routine)
+                    for i := 1; i < len(instruction.operands); i += 1 {
+                        value := machine_read_operand(machine, &instruction.operands[i])
+                        routine.variables[i - 1] = value
+                    }
                 }
 
             case .GET_PARENT:
