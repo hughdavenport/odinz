@@ -55,6 +55,38 @@ object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) 
     return machine_read_byte(machine, u32(addr + (attribute / 8))) & mask == mask
 }
 
+object_get_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
+    header := machine_header(machine)
+    properties := object_properties(machine, object_number)
+    text_length := machine_read_byte(machine, u32(properties))
+    property := properties + u16(text_length) * 2 + 1;
+    if header.version <= 3 {
+        for {
+            size := machine_read_byte(machine, u32(property))
+            if size == 0 do break
+            length := size >> 5 + 1
+            prop_num := size & 0b11111
+            if u16(prop_num) < property_number {
+                // version 1-3
+                return machine_read_word(machine, u32(2 * property_number + u16(header.objects)))
+            }
+            if u16(prop_num) == property_number {
+                switch length {
+                    case 1: return u16(machine_read_byte(machine, u32(property) + 1))
+                    case 2: return machine_read_word(machine, u32(property) + 1)
+                    case:
+                        unreach("Reading value of object %d property %d failed: Expected length of 1 or 2. Got %d",
+                                object_number, property_number, length, machine=machine)
+                }
+            }
+            property += u16(length) + 1
+        }
+        unreachable()
+    } else {
+        unimplemented("V4+ property tables")
+    }
+}
+
 object_put_property :: proc(machine: ^Machine, object_number: u16, property_number: u16, value: u16) {
     header := machine_header(machine)
     properties := object_properties(machine, object_number)

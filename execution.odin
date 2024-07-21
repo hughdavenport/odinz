@@ -65,6 +65,14 @@ execute :: proc(machine: ^Machine) {
                 parent := object_parent(machine, object)
                 machine_write_variable(machine, u16(instruction.store), parent)
 
+            case .GET_PROP:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                property := machine_read_operand(machine, &instruction.operands[1])
+                data := object_get_property(machine, object, property)
+                machine_write_variable(machine, u16(instruction.store), data)
+
             case .INC_CHK:
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)

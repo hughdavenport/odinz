@@ -16,6 +16,7 @@ Opcode :: enum {
     AND,
     CALL,
     GET_PARENT,
+    GET_PROP,
     INC_CHK,
     INSERT_OBJ,
     JE,
@@ -76,6 +77,7 @@ two_ops := [?]Opcode{
     0x0E = .INSERT_OBJ,
     0x0F = .LOADW,
     0x10 = .LOADB,
+    0x11 = .GET_PROP,
     0x14 = .ADD,
     0x15 = .SUB,
 }
@@ -120,7 +122,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -133,6 +135,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .AND,
              .CALL,
              .GET_PARENT,
+             .GET_PROP,
              .LOADB,
              .LOADW,
              .SUB: return true
@@ -153,7 +156,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }
