@@ -46,9 +46,9 @@ execute :: proc(machine: ^Machine) {
 
             case .CALL:
                 assert(len(instruction.operands) > 0)
-                assert(instruction.operands[0].type != .VARIABLE)
                 assert(instruction.has_store)
-                routine_addr := packed_addr(machine, instruction.operands[0].value)
+                packed := machine_read_operand(machine, &instruction.operands[0])
+                routine_addr := packed_addr(machine, packed)
                 if routine_addr == 0 {
                     machine_write_variable(machine, u16(instruction.store), 0)
                 } else {
