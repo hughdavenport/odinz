@@ -31,6 +31,7 @@ execute :: proc(machine: ^Machine) {
                 unreach("Invalid opcode while executing instruction %v",
                         instruction, machine=machine)
             case .ADD:
+                // https://zspec.jaredreisinger.com/15-opcodes#add
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 a := i16(machine_read_operand(machine, &instruction.operands[0]))
@@ -38,6 +39,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), u16(a + b))
 
             case .AND:
+                // https://zspec.jaredreisinger.com/15-opcodes#and
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 a := u16(machine_read_operand(machine, &instruction.operands[0]))
@@ -45,6 +47,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), a & b)
 
             case .CALL:
+                // https://zspec.jaredreisinger.com/15-opcodes#call
                 assert(len(instruction.operands) > 0)
                 assert(instruction.has_store)
                 packed := machine_read_operand(machine, &instruction.operands[0])
@@ -59,6 +62,7 @@ execute :: proc(machine: ^Machine) {
                 }
 
             case .GET_PARENT:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_parent
                 assert(len(instruction.operands) == 1)
                 assert(instruction.has_store)
                 object := machine_read_operand(machine, &instruction.operands[0])
@@ -66,6 +70,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), parent)
 
             case .GET_PROP:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_prop
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 object := machine_read_operand(machine, &instruction.operands[0])
@@ -74,6 +79,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), data)
 
             case .INC_CHK:
+                // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 variable := machine_read_operand(machine, &instruction.operands[0])
@@ -84,12 +90,14 @@ execute :: proc(machine: ^Machine) {
                 jump_condition = x > value
 
             case .INSERT_OBJ:
+                // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
                 assert(len(instruction.operands) == 2)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 destination := machine_read_operand(machine, &instruction.operands[1])
                 object_insert_object(machine, object, destination)
 
             case .JE:
+                // https://zspec.jaredreisinger.com/15-opcodes#je
                 assert(len(instruction.operands) > 1)
                 assert(instruction.has_branch)
                 a := machine_read_operand(machine, &instruction.operands[0])
@@ -102,6 +110,7 @@ execute :: proc(machine: ^Machine) {
                 }
 
             case .JIN:
+                // https://zspec.jaredreisinger.com/15-opcodes#jin
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 object1 := machine_read_operand(machine, &instruction.operands[0])
@@ -109,6 +118,7 @@ execute :: proc(machine: ^Machine) {
                 jump_condition = object_parent(machine, object1) == object2
 
             case .JUMP:
+                // https://zspec.jaredreisinger.com/15-opcodes#jump
                 assert(len(instruction.operands) == 1)
                 // JUMP is different in that it takes the offset as an operand
                 offset := i16(machine_read_operand(machine, &instruction.operands[0]))
@@ -119,12 +129,14 @@ execute :: proc(machine: ^Machine) {
                 }
 
             case .JZ:
+                // https://zspec.jaredreisinger.com/15-opcodes#jz
                 assert(len(instruction.operands) == 1)
                 assert(instruction.has_branch)
                 a := machine_read_operand(machine, &instruction.operands[0])
                 jump_condition = a == 0
 
             case .LOADB:
+                // https://zspec.jaredreisinger.com/15-opcodes#loadb
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 array := machine_read_operand(machine, &instruction.operands[0])
@@ -132,6 +144,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), u16(machine_read_byte(machine, u32(array + index))))
 
             case .LOADW:
+                // https://zspec.jaredreisinger.com/15-opcodes#loadw
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 array := machine_read_operand(machine, &instruction.operands[0])
@@ -139,28 +152,34 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
 
             case .NEW_LINE:
+                // https://zspec.jaredreisinger.com/15-opcodes#new_line
                 fmt.println()
 
             case .PRINT:
+                // https://zspec.jaredreisinger.com/15-opcodes#print
                 assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
 
             case .PRINT_CHAR:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_char
                 assert(len(instruction.operands) == 1)
                 char := machine_read_operand(machine, &instruction.operands[0])
                 zstring_output_zscii(machine, char)
 
             case .PRINT_NUM:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_num
                 assert(len(instruction.operands) == 1)
                 value := i16(machine_read_operand(machine, &instruction.operands[0]))
                 fmt.print(value)
 
             case .PRINT_OBJ:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_obj
                 assert(len(instruction.operands) == 1)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 object_dump(machine, object)
 
             case .PULL:
+                // https://zspec.jaredreisinger.com/15-opcodes#pull
                 assert(len(instruction.operands) == 1)
                 if header.version >= 6 {
                     assert(instruction.has_store)
@@ -172,25 +191,28 @@ execute :: proc(machine: ^Machine) {
                 }
 
             case .PUSH:
+                // https://zspec.jaredreisinger.com/15-opcodes#push
                 assert(len(instruction.operands) == 1)
                 value := machine_read_operand(machine, &instruction.operands[0])
                 append(&current_frame.stack, value)
 
             case .PUT_PROP:
+                // https://zspec.jaredreisinger.com/15-opcodes#put_prop
                 assert(len(instruction.operands) == 3)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 property := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
-
                 object_put_property(machine, object, property, value)
 
             case .RTRUE:
+                // https://zspec.jaredreisinger.com/15-opcodes#rtrue
                 assert(len(instruction.operands) == 0)
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
                 delete_frame(current_frame)
 
             case .RET:
+                // https://zspec.jaredreisinger.com/15-opcodes#ret
                 assert(len(instruction.operands) == 1)
                 ret := machine_read_operand(machine, &instruction.operands[0])
                 pop(&machine.frames)
@@ -198,18 +220,21 @@ execute :: proc(machine: ^Machine) {
                 delete_frame(current_frame)
 
             case .SET_ATTR:
+                // https://zspec.jaredreisinger.com/15-opcodes#set_attr
                 assert(len(instruction.operands) == 2)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 object_set_attr(machine, object, attribute)
 
             case .STORE:
+                // https://zspec.jaredreisinger.com/15-opcodes#store
                 assert(len(instruction.operands) == 2)
                 variable := machine_read_operand(machine, &instruction.operands[0])
                 value := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, variable, value)
 
             case .STOREW:
+                // https://zspec.jaredreisinger.com/15-opcodes#storew
                 assert(len(instruction.operands) == 3)
                 array := machine_read_operand(machine, &instruction.operands[0])
                 index := machine_read_operand(machine, &instruction.operands[1])
@@ -217,6 +242,7 @@ execute :: proc(machine: ^Machine) {
                 machine_write_word(machine, u32(array + 2 * index), value)
 
             case .SUB:
+                // https://zspec.jaredreisinger.com/15-opcodes#sub
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 a := i16(machine_read_operand(machine, &instruction.operands[0]))
@@ -224,14 +250,14 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), u16(a - b))
 
             case .TEST_ATTR:
+                // https://zspec.jaredreisinger.com/15-opcodes#test_attr
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 jump_condition = object_test_attr(machine, object, attribute)
 
-        }
-
+        } // switch instruction.opcode
 
         if instruction.has_branch && jump_condition == instruction.branch_condition {
             offset := i16(instruction.branch_offset)

@@ -10,6 +10,7 @@ OpcodeType :: enum {
     EXT,
 }
 
+// https://zspec.jaredreisinger.com/15-opcodes
 Opcode :: enum {
     UNKNOWN,
     ADD,
@@ -42,6 +43,7 @@ Opcode :: enum {
     TEST_ATTR,
 }
 
+// https://zspec.jaredreisinger.com/14-opcode-table
 var_ops := [?]Opcode{
     0x00 = .CALL,
     0x01 = .STOREW,
@@ -52,12 +54,14 @@ var_ops := [?]Opcode{
     0x09 = .PULL,
 }
 
+// https://zspec.jaredreisinger.com/14-opcode-table
 zero_ops := [?]Opcode{
     0x00 = .RTRUE,
     0x02 = .PRINT,
     0x0B = .NEW_LINE,
 }
 
+// https://zspec.jaredreisinger.com/14-opcode-table
 one_ops := [?]Opcode{
     0x00 = .JZ,
     0x03 = .GET_PARENT,
@@ -66,6 +70,7 @@ one_ops := [?]Opcode{
     0x0C = .JUMP,
 }
 
+// https://zspec.jaredreisinger.com/14-opcode-table
 two_ops := [?]Opcode{
     0x01 = .JE,
     0x05 = .INC_CHK,
