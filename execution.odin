@@ -93,6 +93,17 @@ execute :: proc(machine: ^Machine) {
                 data := object_get_property(machine, object, property)
                 machine_write_variable(machine, u16(instruction.store), data)
 
+            case .GET_SIBLING:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_sibling
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                assert(instruction.has_branch)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                sibling := object_sibling(machine, object)
+                machine_write_variable(machine, u16(instruction.store), sibling)
+                jump_condition = sibling != 0
+
             case .INC_CHK:
                 // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
                 assert(len(instruction.operands) == 2)
