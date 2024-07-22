@@ -63,7 +63,6 @@ object_get_property :: proc(machine: ^Machine, object_number: u16, property_numb
     if header.version <= 3 {
         for {
             size := machine_read_byte(machine, u32(property))
-            if size == 0 do break
             length := size >> 5 + 1
             prop_num := size & 0b11111
             if u16(prop_num) < property_number {
