@@ -107,6 +107,14 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), sibling)
                 jump_condition = sibling != 0
 
+            case .INC:
+                // https://zspec.jaredreisinger.com/15-opcodes#inc
+                assert(len(instruction.operands) == 1)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                x := machine_read_variable(machine, variable)
+                x += 1
+                machine_write_variable(machine, variable, x)
+
             case .INC_CHK:
                 // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
                 assert(len(instruction.operands) == 2)
@@ -148,6 +156,13 @@ execute :: proc(machine: ^Machine) {
                 object1 := machine_read_operand(machine, &instruction.operands[0])
                 object2 := machine_read_operand(machine, &instruction.operands[1])
                 jump_condition = object_parent(machine, object1) == object2
+
+            case .JL:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                jump_condition = a < b
 
             case .JUMP:
                 // https://zspec.jaredreisinger.com/15-opcodes#jump
@@ -247,6 +262,13 @@ execute :: proc(machine: ^Machine) {
                 property := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
                 object_put_property(machine, object, property, value)
+
+            case .RFALSE:
+                // https://zspec.jaredreisinger.com/15-opcodes#rfalse
+                assert(len(instruction.operands) == 0)
+                pop(&machine.frames)
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 0)
+                delete_frame(current_frame)
 
             case .RTRUE:
                 // https://zspec.jaredreisinger.com/15-opcodes#rtrue

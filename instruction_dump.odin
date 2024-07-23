@@ -72,8 +72,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .UNKNOWN: unreach("Invalid opcode while dumping instruction", machine=machine)
         case .ADD,
              .AND,
-             .INC_CHK,
              .JE,
+             .JL,
              .JZ,
              .LOADB,
              .LOADW,
@@ -83,6 +83,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .PRINT_PADDR,
              .PUSH,
              .RET,
+             .RFALSE,
              .RTRUE,
              .STOREW,
              .SUB:
@@ -113,6 +114,13 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .TEST_ATTR:
             assert(len(instruction.operands) >= 1)
             _object_dump(machine, instruction.operands[0])
+            if len(instruction.operands) >= 2 do fmt.print(",")
+            operands_dump(instruction.operands[1:])
+
+        case .INC,
+             .INC_CHK:
+            assert(len(instruction.operands) >= 1)
+            variable_dump(instruction.operands[0].value)
             if len(instruction.operands) >= 2 do fmt.print(",")
             operands_dump(instruction.operands[1:])
 

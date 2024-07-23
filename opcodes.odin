@@ -20,10 +20,12 @@ Opcode :: enum {
     GET_PARENT,
     GET_PROP,
     GET_SIBLING,
+    INC,
     INC_CHK,
     INSERT_OBJ,
     JE,
     JIN,
+    JL,
     JUMP,
     JZ,
     LOADB,
@@ -38,6 +40,7 @@ Opcode :: enum {
     PUSH,
     PUT_PROP,
     RET,
+    RFALSE,
     RTRUE,
     SET_ATTR,
     STORE,
@@ -60,6 +63,7 @@ var_ops := [?]Opcode{
 // https://zspec.jaredreisinger.com/14-opcode-table
 zero_ops := [?]Opcode{
     0x00 = .RTRUE,
+    0x01 = .RFALSE,
     0x02 = .PRINT,
     0x0B = .NEW_LINE,
 }
@@ -70,6 +74,7 @@ one_ops := [?]Opcode{
     0x01 = .GET_SIBLING,
     0x02 = .GET_CHILD,
     0x03 = .GET_PARENT,
+    0x05 = .INC,
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
     0x0C = .JUMP,
@@ -79,6 +84,7 @@ one_ops := [?]Opcode{
 // https://zspec.jaredreisinger.com/14-opcode-table
 two_ops := [?]Opcode{
     0x01 = .JE,
+    0x02 = .JL,
     0x05 = .INC_CHK,
     0x06 = .JIN,
     0x09 = .AND,
@@ -131,11 +137,12 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .INC_CHK,
              .JE,
              .JIN,
+             .JL,
              .JZ,
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INC, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -160,7 +167,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
             else do return false
 
         // Not needed, but good for detecting new instructions
-        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
+        case .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -171,7 +178,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }
