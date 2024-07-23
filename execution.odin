@@ -18,8 +18,8 @@ execute :: proc(machine: ^Machine) {
         instruction := instruction_read(machine, current_frame.pc)
         current_frame.pc += u32(instruction.length)
 
-        for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
-        instruction_dump(machine, &instruction, len(machine.frames) - 1)
+        // for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
+        // instruction_dump(machine, &instruction, len(machine.frames) - 1)
 
         // fmt.printfln("Frame = %v", current_frame^)
         // fmt.printfln("All frames = %v", machine.frames)
