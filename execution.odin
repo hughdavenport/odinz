@@ -211,7 +211,7 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#print_char
                 assert(len(instruction.operands) == 1)
                 char := machine_read_operand(machine, &instruction.operands[0])
-                fmt.printf("%s", zstring_output_zscii(machine, char))
+                fmt.print(zstring_output_zscii(machine, char))
 
             case .PRINT_NUM:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_num
