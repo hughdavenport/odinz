@@ -40,6 +40,7 @@ Opcode :: enum {
     PUSH,
     PUT_PROP,
     RET,
+    RET_POPPED,
     RFALSE,
     RTRUE,
     SET_ATTR,
@@ -65,6 +66,7 @@ zero_ops := [?]Opcode{
     0x00 = .RTRUE,
     0x01 = .RFALSE,
     0x02 = .PRINT,
+    0x08 = .RET_POPPED,
     0x0B = .NEW_LINE,
 }
 
@@ -142,7 +144,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INC, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INC, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -167,7 +169,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
             else do return false
 
         // Not needed, but good for detecting new instructions
-        case .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
+        case .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -178,7 +180,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

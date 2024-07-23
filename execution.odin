@@ -285,6 +285,14 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
 
+            case .RET_POPPED:
+                // https://zspec.jaredreisinger.com/15-opcodes#ret_popped
+                assert(len(instruction.operands) == 0)
+                ret := machine_read_variable(machine, 0)
+                pop(&machine.frames)
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
+                delete_frame(current_frame)
+
             case .SET_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#set_attr
                 assert(len(instruction.operands) == 2)
