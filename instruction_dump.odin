@@ -80,6 +80,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .NEW_LINE,
              .PRINT_CHAR,
              .PRINT_NUM,
+             .PRINT_PADDR,
              .PUSH,
              .RET,
              .RTRUE,

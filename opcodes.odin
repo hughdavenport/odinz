@@ -33,6 +33,7 @@ Opcode :: enum {
     PRINT_CHAR,
     PRINT_NUM,
     PRINT_OBJ,
+    PRINT_PADDR,
     PULL,
     PUSH,
     PUT_PROP,
@@ -72,6 +73,7 @@ one_ops := [?]Opcode{
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
     0x0C = .JUMP,
+    0x0D = .PRINT_PADDR,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -133,7 +135,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .GET_PARENT, .GET_PROP, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB:
     }
     return false
 }
@@ -158,7 +160,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
             else do return false
 
         // Not needed, but good for detecting new instructions
-        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
+        case .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
     }
     return false
 }
@@ -169,7 +171,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Not needed, but good for detecting new instructions
-        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC_CHK, .INSERT_OBJ, .JE, .JIN, .JUMP, .JZ, .LOADB, .LOADW, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RET, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
     }
     return false
 }

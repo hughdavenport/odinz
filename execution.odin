@@ -204,6 +204,16 @@ execute :: proc(machine: ^Machine) {
                 object := machine_read_operand(machine, &instruction.operands[0])
                 object_dump(machine, object)
 
+            case .PRINT_PADDR:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_paddr
+                assert(len(instruction.operands) == 1)
+                packed := machine_read_operand(machine, &instruction.operands[0])
+                str_addr := packed_addr(machine, packed)
+                zstring_dump(machine, str_addr)
+
+                fmt.println()
+                unimplemented()
+
             case .PULL:
                 // https://zspec.jaredreisinger.com/15-opcodes#pull
                 assert(len(instruction.operands) == 1)
