@@ -61,6 +61,7 @@ object_get_property :: proc(machine: ^Machine, object_number: u16, property_numb
     text_length := machine_read_byte(machine, u32(properties))
     property := properties + u16(text_length) * 2 + 1;
     if header.version <= 3 {
+        assert(property_number < 31)
         for {
             size := machine_read_byte(machine, u32(property))
             length := size >> 5 + 1
