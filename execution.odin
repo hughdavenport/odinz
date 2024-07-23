@@ -136,9 +136,10 @@ execute :: proc(machine: ^Machine) {
                 for &operand in instruction.operands[1:] {
                     if machine_read_operand(machine, &operand) == a {
                         jump_condition = true
-                        break
+                        // Keep going in the loop, incase an operand is the stack
                     }
                 }
+                break
 
             case .JIN:
                 // https://zspec.jaredreisinger.com/15-opcodes#jin
