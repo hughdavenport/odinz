@@ -277,6 +277,23 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
                 delete_frame(current_frame)
 
+            case .READ:
+                // https://zspec.jaredreisinger.com/15-opcodes#read
+                switch header.version {
+                    case 1..<4:
+                        fmt.println(instruction)
+                        unimplemented()
+
+                    case 4:
+                        fmt.println()
+                        unimplemented()
+
+                    case: // 5+
+                        fmt.println()
+                        unimplemented()
+                }
+                unreach()
+
             case .RET:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret
                 assert(len(instruction.operands) == 1)
