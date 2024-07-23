@@ -68,7 +68,7 @@ object_get_property :: proc(machine: ^Machine, object_number: u16, property_numb
             prop_num := size & 0b11111
             if u16(prop_num) < property_number {
                 // version 1-3
-                return machine_read_word(machine, u32(2 * property_number + u16(header.objects)))
+                return machine_read_word(machine, u32(2 * (property_number - 1) + u16(header.objects)))
             }
             if u16(prop_num) == property_number {
                 switch length {
