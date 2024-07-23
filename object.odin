@@ -26,6 +26,7 @@ object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
 }
 
 object_dump :: proc(machine: ^Machine, object_number: u16) {
+    if object_number == 0 do return
     properties := object_properties(machine, object_number)
     length := machine_read_byte(machine, u32(properties))
 

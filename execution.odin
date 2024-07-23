@@ -80,7 +80,9 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#get_parent
                 assert(len(instruction.operands) == 1)
                 assert(instruction.has_store)
+                assert(!instruction.has_branch) // No branch on this instruction
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 parent := object_parent(machine, object)
                 machine_write_variable(machine, u16(instruction.store), parent)
 
@@ -89,6 +91,7 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 property := machine_read_operand(machine, &instruction.operands[1])
                 data := object_get_property(machine, object, property)
                 machine_write_variable(machine, u16(instruction.store), data)
@@ -119,7 +122,9 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
                 assert(len(instruction.operands) == 2)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 destination := machine_read_operand(machine, &instruction.operands[1])
+                assert(destination != 0)
                 object_insert_object(machine, object, destination)
 
             case .JE:
@@ -202,6 +207,7 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#print_obj
                 assert(len(instruction.operands) == 1)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 object_dump(machine, object)
 
             case .PRINT_PADDR:
@@ -236,6 +242,7 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#put_prop
                 assert(len(instruction.operands) == 3)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 property := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
                 object_put_property(machine, object, property, value)
@@ -259,6 +266,7 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#set_attr
                 assert(len(instruction.operands) == 2)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 object_set_attr(machine, object, attribute)
 
@@ -290,6 +298,7 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 jump_condition = object_test_attr(machine, object, attribute)
 
