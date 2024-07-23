@@ -41,7 +41,7 @@ object_set_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
     else do assert(attribute <= 48)
 
     attribute_addr := u32(addr + (attribute / 8))
-    mask := u8(1 << (8 - (attribute % 8)))
+    mask := u8(1 << (7 - (attribute % 8)))
     orig := machine_read_byte(machine, attribute_addr)
     machine_write_byte(machine, attribute_addr, orig | mask)
 }
@@ -52,7 +52,7 @@ object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) 
     if header.version <= 3 do assert(attribute <= 32)
     else do assert(attribute <= 48)
 
-    mask := u8(1 << (8 - (attribute % 8)))
+    mask := u8(1 << (7 - (attribute % 8)))
     return machine_read_byte(machine, u32(addr + (attribute / 8))) & mask == mask
 }
 
