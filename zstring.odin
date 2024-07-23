@@ -15,6 +15,7 @@ ZString_Mode :: enum {
 
 ZString :: struct {
     sb: ^strings.Builder,
+    input: bool,
     mode: ZString_Mode,
     char: u8,
 }
@@ -83,8 +84,17 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
                     unreach("Parsing zstring failed. Invalid zchar %d", zchar, machine=machine);
             }
 
-        case .ZSCII_1: unimplemented()
-        case .ZSCII_2: unimplemented()
+        case .ZSCII_1:
+            zstring.char = zchar
+            zstring.mode = .ZSCII_2
+
+        case .ZSCII_2:
+            mask := u8(0b11111)
+            code := (u16(zstring.char & mask) << 5) | u16(zchar & mask)
+            if zstring.input do unimplemented()
+            else do fmt.sbprint(zstring.sb, zstring_output_zscii(machine, code))
+            zstring.mode = .A0
+
         case .ABBREV:
             index := 32 * u32(zstring.char - 1) + u32(zchar)
             addr := u32(machine_read_word(machine, u32(header.abbreviations) + 2 * index))
@@ -146,33 +156,34 @@ zstring_dump :: proc(machine: ^Machine, address: u32, length: u8 = 0) {
     fmt.print(zstring_read(machine, address, &len))
 }
 
-zstring_output_zscii :: proc(machine: ^Machine, char: u16) {
+zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
     header := machine_header(machine)
     assert(char <= 1023)
     // Must be defined for output in ZSCII (S3.8 in specs)
     switch char {
-        case 0: // null, no-op for output
+        case 0: return "" // null, no-op for output
         case 1..=7: unreach()
         case 8: unreach() // delete, undefined for output
         case 9:
-            if header.version <= 6 do unreach() // undefined
-            fmt.print('\t')
+            if header.version != 6 do unreach() // undefined
+            return "\t"
         case 10: unreach()
         case 11:
-            if header.version <= 6 do unreach() // undefined
-            fmt.print("  ")
+            if header.version != 6 do unreach() // undefined
+            return "  "
         case 12: unreach()
-        case 13: fmt.println()
+        case 13: return fmt.tprintln()
         case 14..=26: unreach()
         case 27:
             // ESC. Need to be careful about dodgy escape codes
             unimplemented()
         case 28..=31: unreach()
-        case 32..=126: fmt.printf("%c", char)
+        case 32..=126: return fmt.tprintf("%c", char)
         case 127, 128: unreach()
         case 129..=154: unreach() // undefined for output
         case 155..=251:
             unimplemented("Extra characters")
         case: unreach()
     }
+    unreach()
 }
