@@ -153,9 +153,9 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#jin
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
-                object1 := machine_read_operand(machine, &instruction.operands[0])
-                object2 := machine_read_operand(machine, &instruction.operands[1])
-                jump_condition = object_parent(machine, object1) == object2
+                a := machine_read_operand(machine, &instruction.operands[0])
+                b := machine_read_operand(machine, &instruction.operands[1])
+                jump_condition = object_parent(machine, a) == b
 
             case .JL:
                 assert(len(instruction.operands) == 2)
