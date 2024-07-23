@@ -128,6 +128,7 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
             case .TWO: type_s = "2OP"
             case .EXT: type_s = "EXT"
         }
+        fmt.println()
         unimplemented(fmt.tprintf("\n%x: %s:%d %02x", address, type_s, num + offset, num))
     }
     return ops[num]
