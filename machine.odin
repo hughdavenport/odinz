@@ -120,4 +120,7 @@ initialise_machine :: proc(machine: ^Machine) {
         pc = u32(header.initialpc),
     })
     // FIXME set various bits and stuff in header
+
+    fmt.println("machine.odin:124: initialise_machine: WARN: Disabling status line")
+    header.flags1 = transmute(u8)(transmute(Flags1_V3)header.flags1 + {.status_unavail})
 }

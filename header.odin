@@ -21,7 +21,6 @@ Header :: struct {
     // TODO rest of header defined in 4+
 }
 
-@(private="file")
 Flags1_V3 :: bit_set[enum {
     _unused1,
     status,

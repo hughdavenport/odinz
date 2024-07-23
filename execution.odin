@@ -281,7 +281,13 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#read
                 switch header.version {
                     case 1..<4:
-                        fmt.println(instruction)
+                        if ! (.status_unavail in transmute(Flags1_V3)header.flags1) {
+                            // FIXME redraw status line
+                            fmt.println()
+                            unimplemented()
+                        }
+
+                        fmt.println()
                         unimplemented()
 
                     case 4:
