@@ -1,6 +1,74 @@
 package odinz
 
 import "core:fmt"
+import "core:os"
+
+read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
+    // https://zspec.jaredreisinger.com/15-opcodes#read
+    header := machine_header(machine)
+    assert(len(instruction.operands) >= 2)
+    text := machine_read_operand(machine, &instruction.operands[0])
+    parse := machine_read_operand(machine, &instruction.operands[1])
+    assert(text != 0)
+    assert(parse != 0)
+
+    if header.version >= 1 && header.version <= 3 {
+        if ! (.status_unavail in transmute(Flags1_V3)header.flags1) {
+            // FIXME redraw status line
+            fmt.println()
+            unimplemented()
+        }
+    }
+
+    if header.version >= 5 do assert(instruction.has_store)
+    else do assert(!instruction.has_store)
+
+    if header.version >= 4 && len(instruction.operands) > 2 {
+        assert(len(instruction.operands) == 4)
+        time := machine_read_operand(machine, &instruction.operands[2])
+        routine := machine_read_operand(machine, &instruction.operands[3])
+        if time != 0 && routine != 0 do unimplemented("timed reads")
+    }
+
+    length := machine_read_byte(machine, u32(text))
+    data: []u8 = { 0 }
+    done := u8(0)
+    {
+        if header.version >= 5 {
+            done = machine_read_byte(machine, u32(text) + 1)
+            if done != 0 do unimplemented("Reading left over text")
+            done += 1
+        }
+        defer if header.version >= 5 do machine_write_byte(machine, u32(text) + 1, done - 1)
+        for {
+            if done == length {
+                if header.version < 5 do machine_write_byte(machine, u32(text) + u32(done) + 1, 0)
+                break
+            }
+
+            read, err := os.read(os.stdin, data)
+            if err != os.ERROR_NONE {
+                fmt.println(err)
+                unimplemented("Error handling")
+            }
+
+            if data[0] == '\n' {
+                if header.version < 5 do machine_write_byte(machine, u32(text) + u32(done) + 1, 0)
+                break
+            } else {
+                c := data[0]
+                if c >= 'A' && c <= 'Z' do c += 32
+                machine_write_byte(machine, u32(text) + u32(done) + 1, c)
+            }
+            done += 1
+        }
+    }
+
+    fmt.printfln("text = %x (%s)", machine.memory[text+1:][:done], machine.memory[text+1:][:done])
+
+    fmt.println()
+    unimplemented()
+}
 
 execute :: proc(machine: ^Machine) {
     header := machine_header(machine)
@@ -279,26 +347,7 @@ execute :: proc(machine: ^Machine) {
 
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
-                switch header.version {
-                    case 1..<4:
-                        if ! (.status_unavail in transmute(Flags1_V3)header.flags1) {
-                            // FIXME redraw status line
-                            fmt.println()
-                            unimplemented()
-                        }
-
-                        fmt.println()
-                        unimplemented()
-
-                    case 4:
-                        fmt.println()
-                        unimplemented()
-
-                    case: // 5+
-                        fmt.println()
-                        unimplemented()
-                }
-                unreach()
+                read_opcode(machine, &instruction)
 
             case .RET:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret
