@@ -27,11 +27,12 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
         if time != 0 && routine != 0 do unimplemented("timed reads")
     }
 
-    lexer_read(machine, text, parse)
-    lexer_analyse(machine, text, parse)
+    input := lexer_read(machine, text)
+    defer delete(input)
+    lexer_analyse(machine, parse, input)
 
     fmt.println()
-    unimplemented()
+    if true do unimplemented()
 }
 
 execute :: proc(machine: ^Machine) {
