@@ -34,6 +34,10 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
             break
         } else {
             c := data[0]
+            switch c {
+                case '\n', 32..=126, 155..=251:
+                case: continue
+            }
             if c >= 'A' && c <= 'Z' do c += 32
             machine_write_byte(machine, text + done + 1, c)
         }
