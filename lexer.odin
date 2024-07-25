@@ -51,42 +51,47 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
     }
 }
 
-lexer_analyse :: proc(machine: ^Machine, parse: u32, input: string) {
-    // https://zspec.jaredreisinger.com/13-dictionary#13_6
+lexer_split :: proc(machine: ^Machine, input: string) -> [dynamic]string {
     header := machine_header(machine)
-    if header.version >= 5 && parse == 0 do return
-
     dictionary := u32(header.dictionary)
     n := machine_read_byte(machine, dictionary)
+    ret: [dynamic]string
     separators := make([]u8, n)
+    defer delete(separators)
     for i := u8(0); i < n; i += 1 {
-        separators[i] = machine_read_byte(machine,
-            dictionary + u32(i) + 1)
+        separators[i] = machine_read_byte(machine, dictionary + u32(i) + 1)
     }
-    fmt.println("seps: ", separators)
-    fmt.printfln("seps: %c", separators)
     offset := 0
     for index := 0; index < len(input); index += 1 {
         c := u8(input[index])
         if c == ' ' {
-            // test word so far
             word := input[offset:index]
             offset = index + 1
-            if len(word) > 0 do fmt.println("Got word:", word)
+            if len(word) > 0 do append(&ret, word)
             continue
         }
         if slice.contains(separators, c) {
-            // test word so far
             word := input[offset:index]
-            if len(word) > 0 do fmt.println("Got word:", word)
-            // test sep
-            fmt.printfln("Got sepa: %c", c)
+            if len(word) > 0 do append(&ret, word)
+            append(&ret, input[index:][:1])
             offset = index + 1
         }
-
-
     }
-    fmt.println("input:", input)
+    word := input[offset:]
+    if len(word) > 0 do append(&ret, word)
+    return ret
+}
+
+lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
+    // https://zspec.jaredreisinger.com/13-dictionary#13_6
+    header := machine_header(machine)
+    if header.version >= 5 && parse == 0 do return
+
+    input := lexer_read(machine, text)
+    defer delete(input)
+    words := lexer_split(machine, input)
+    defer delete(words)
+    fmt.println("words:", words)
 
     // For each word
     // - Encode zstring
@@ -99,5 +104,5 @@ lexer_analyse :: proc(machine: ^Machine, parse: u32, input: string) {
     // - Write parse table entry
     // Write parse table length
 
-    unimplemented()
+    if true do unimplemented()
 }

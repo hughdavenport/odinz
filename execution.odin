@@ -27,9 +27,7 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
         if time != 0 && routine != 0 do unimplemented("timed reads")
     }
 
-    input := lexer_read(machine, text)
-    defer delete(input)
-    lexer_analyse(machine, parse, input)
+    lexer_analyse(machine, text, parse)
 
     fmt.println()
     if true do unimplemented()
