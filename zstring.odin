@@ -187,3 +187,8 @@ zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
     }
     unreach()
 }
+
+zstring_encode :: proc(machine: ^Machine, word: string, data_ptr: ^[]u8) {
+    // https://zspec.jaredreisinger.com/03-text#3_7
+    unimplemented()
+}

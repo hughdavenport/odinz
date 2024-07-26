@@ -52,6 +52,7 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
 }
 
 lexer_split :: proc(machine: ^Machine, input: string) -> [dynamic]string {
+    // https://zspec.jaredreisinger.com/13-dictionary#13_6
     header := machine_header(machine)
     dictionary := u32(header.dictionary)
     n := machine_read_byte(machine, dictionary)
@@ -83,7 +84,9 @@ lexer_split :: proc(machine: ^Machine, input: string) -> [dynamic]string {
 }
 
 lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
+    // https://zspec.jaredreisinger.com/15-opcodes#read
     // https://zspec.jaredreisinger.com/13-dictionary#13_6
+    // https://zspec.jaredreisinger.com/03-text#3_7
     header := machine_header(machine)
     if header.version >= 5 && parse == 0 do return
 
@@ -92,6 +95,13 @@ lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
     words := lexer_split(machine, input)
     defer delete(words)
     fmt.println("words:", words)
+
+    data: []u8
+    if header.version >= 4 do data = make([]u8, 9 * 2)
+    else do data = make([]u8, 6 * 2)
+    for word in words {
+        zstring_encode(machine, word, &data)
+    }
 
     // For each word
     // - Encode zstring

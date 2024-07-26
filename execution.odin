@@ -30,7 +30,7 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     lexer_analyse(machine, text, parse)
 
     fmt.println()
-    if true do unimplemented()
+    unimplemented()
 }
 
 execute :: proc(machine: ^Machine) {
