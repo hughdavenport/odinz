@@ -94,25 +94,19 @@ lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
     defer delete(input)
     words := lexer_split(machine, input)
     defer delete(words)
-    fmt.println("words:", words)
 
-    data: []u8
-    if header.version >= 4 do data = make([]u8, 9 * 2)
-    else do data = make([]u8, 6 * 2)
+    data: []u16
+    if header.version >= 4 do data = make([]u16, 3)
+    else do data = make([]u16, 2)
     for word in words {
         zstring_encode(machine, word, &data)
+        // For each word
+        // - Find dict entry
+        //  - Binary search
+        // - Write parse table entry
+        // Write parse table length
     }
 
-    // For each word
-    // - Encode zstring
-    //  - dictionary form
-    //  - no abbrevs
-    //  - input zscii (if needed)
-    //  - truncated to size of supplied byte
-    // - Find dict entry
-    //  - Binary search
-    // - Write parse table entry
-    // Write parse table length
 
     if true do unimplemented()
 }

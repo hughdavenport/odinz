@@ -1,5 +1,6 @@
 package odinz
 
+import "core:slice"
 import "core:strings"
 import "core:fmt"
 
@@ -188,7 +189,73 @@ zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
     unreach()
 }
 
-zstring_encode :: proc(machine: ^Machine, word: string, data_ptr: ^[]u8) {
+@(private="file")
+zstring_encode_zchars :: proc(machine: ^Machine, word: string, zchars_ptr: ^[]u8) {
+    header := machine_header(machine)
+    if header.version <= 2 do unimplemented()
+    if header.version >= 5 do unimplemented("alphabet tables")
+
+    assert(zchars_ptr != nil)
+    length := len(zchars_ptr^)
+    slice.fill(zchars_ptr^, 5)
+    // Encode zchars
+    index := 0
+    for c in word {
+        if index >= length do return
+
+        if slice.contains(zstring_alphabet_0[:], c) {
+            entry, found := slice.linear_search(zstring_alphabet_0[:], c)
+            assert(found)
+            zchars_ptr^[index] = 6 + u8(entry)
+            index += 1
+        } else if slice.contains(zstring_alphabet_1[:], c) {
+            entry, found := slice.linear_search(zstring_alphabet_1[:], c)
+            assert(found)
+            zchars_ptr^[index] = 4
+            if index + 1 >= length do return
+            zchars_ptr^[index + 1] = 6 + u8(entry)
+            index += 2
+        } else if slice.contains(zstring_alphabet_2[:], c) {
+            entry, found := slice.linear_search(zstring_alphabet_2[:], c)
+            assert(found)
+            zchars_ptr^[index] = 5
+            if index + 1 >= length do return
+            zchars_ptr^[index + 1] = 6 + u8(entry)
+            index += 2
+        } else {
+            // zcsii escape
+            zchars_ptr^[index] = 5
+            if index + 1 >= length do return
+            zchars_ptr^[index + 1] = 6
+            if index + 2 >= length do return
+            switch c {
+                case 32..=126:
+                    code := u16(c)
+                    zchars_ptr^[index + 2] = u8(code >> 5) & 0b11111
+                    if index + 2 >= length do return
+                    zchars_ptr^[index + 3] = u8(code) & 0b11111
+                case: unimplemented("extra characters")
+            }
+            index += 4
+        }
+    }
+}
+
+zstring_encode :: proc(machine: ^Machine, word: string, data_ptr: ^[]u16) {
     // https://zspec.jaredreisinger.com/03-text#3_7
-    unimplemented()
+    assert(data_ptr != nil)
+    length := len(data_ptr^)
+    zchars := make([]u8, length * 3)
+    defer delete(zchars)
+
+    zstring_encode_zchars(machine, word, &zchars)
+
+    // Assemble zchars into zwords
+    for index := 0; index + 2 < len(zchars); index += 3 {
+        mask := u16(0b11111)
+        word := ((u16(zchars[index]) & mask) << 10) | ((u16(zchars[index+1]) & mask) << 5) | ((u16(zchars[index+2])) & mask)
+        data_ptr^[index / 3] = word
+    }
+    // Set top bit of last word to signal stop
+    data_ptr^[length-1] = 0x8000 | data_ptr^[length-1]
 }
