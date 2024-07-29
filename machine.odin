@@ -6,6 +6,8 @@ import "core:slice"
 
 Trace :: bit_set[enum {
     instruction,
+    read,
+    write,
 }]
 
 Machine :: struct {
@@ -56,29 +58,58 @@ bit :: proc(byte: u8, bit: u8) -> bool {
 }
 
 machine_read_byte :: proc(machine: ^Machine, address: u32) -> u8 {
-    if int(address) >= len(machine.memory) do return 0
+    if int(address) >= len(machine.memory) do unreachable()
+    if .read in machine.trace do fmt.printfln("READ @ 0x%04x: 0x%02x", address, machine.memory[address])
     return machine.memory[address]
 }
 
 machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
+    if .read in machine.trace {
+        machine.trace &= ~{.read}
+        defer machine.trace |= {.read}
+        word := u16(machine_read_byte(machine, address)) << 8 + u16(machine_read_byte(machine, address + 1))
+        fmt.printfln("READ @ 0x%04x: 0x%04x", address, word)
+        return word
+    }
     return u16(machine_read_byte(machine, address)) << 8 + u16(machine_read_byte(machine, address + 1))
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
-    if int(address) >= len(machine.memory) do return
+    if int(address) >= len(machine.memory) do unreach()
+    if .write in machine.trace do fmt.printfln("WRITE @ 0x%04x: 0x%02x", address, value)
     machine.memory[address] = value
 }
 
 machine_write_word :: proc(machine: ^Machine, address: u32, value: u16) {
+    if .write in machine.trace {
+        machine.trace &= ~{.write}
+        defer machine.trace |= {.write}
+        fmt.printfln("WRITE @ 0x%04x: 0x%04x", address, value)
+        machine_write_byte(machine, address, u8(value >> 8))
+        machine_write_byte(machine, address + 1, u8(value))
+    }
     machine_write_byte(machine, address, u8(value >> 8))
     machine_write_byte(machine, address + 1, u8(value))
 }
 
 machine_read_global :: proc(machine: ^Machine, global: u16) -> u16 {
+    if .read in machine.trace {
+        machine.trace &= ~{.read}
+        defer machine.trace |= {.read}
+        word := machine_read_word(machine, u32(machine_header(machine).globals) + u32(global) * 2)
+        fmt.printfln("READ @ G%02x: 0x%04x", global, word)
+        return word
+    }
     return machine_read_word(machine, u32(machine_header(machine).globals) + u32(global) * 2)
 }
 
 machine_write_global :: proc(machine: ^Machine, global: u16, value: u16) {
+    if .write in machine.trace {
+        machine.trace &= ~{.write}
+        defer machine.trace |= {.write}
+        fmt.printfln("WRITE @ G%02x: 0x%04x", global, value)
+        machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
+    }
     machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
 }
 

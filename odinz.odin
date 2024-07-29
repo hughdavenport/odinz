@@ -17,7 +17,10 @@ EXIT_CODE :: enum int {
 usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintfln("Usage: %s [OPTIONS] [--] romfile", progname)
     fmt.eprintln("OPTIONS:")
-    fmt.eprintln("    -t|--trace    Enable tracing of instructions")
+    fmt.eprintln("    -t|--trace[=all]           Enable all traces listed below")
+    fmt.eprintln("    -ti|--trace=instruction    Enable tracing of instructions")
+    fmt.eprintln("    -tr|--trace=read           Enable tracing of reads")
+    fmt.eprintln("    -tw|--trace=write          Enable tracing of writes")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -48,7 +51,10 @@ main :: proc() {
             break
         }
         switch args[0] {
-            case "-t", "--trace": trace = trace | {.instruction}
+            case "-t", "--trace", "--trace=all": trace = ~{}
+            case "-ti", "--trace=instruction": trace |= {.instruction}
+            case "-tr", "--trace=read": trace |= {.read}
+            case "-tw", "--trace=write": trace |= {.write}
             case: usage_and_exit(progname)
         }
         args = args[1:]
