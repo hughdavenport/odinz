@@ -29,8 +29,7 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
 
     lexer_analyse(machine, text, parse)
 
-    fmt.println()
-    unimplemented()
+    if header.version >= 5 do unimplemented("store")
 }
 
 execute :: proc(machine: ^Machine) {

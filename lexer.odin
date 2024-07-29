@@ -5,6 +5,12 @@ import "core:os"
 import "core:slice"
 import "core:strings"
 
+@(private="file")
+LexedBlock :: struct {
+    word: string,
+    index: u8,
+}
+
 lexer_read :: proc(machine: ^Machine, text: u32) -> string {
     // https://zspec.jaredreisinger.com/15-opcodes#read
     header := machine_header(machine)
@@ -51,12 +57,12 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
     }
 }
 
-lexer_split :: proc(machine: ^Machine, input: string) -> [dynamic]string {
+lexer_split :: proc(machine: ^Machine, input: string, limit: u8) -> [dynamic]LexedBlock {
     // https://zspec.jaredreisinger.com/13-dictionary#13_6
     header := machine_header(machine)
     dictionary := u32(header.dictionary)
     n := machine_read_byte(machine, dictionary)
-    ret: [dynamic]string
+    ret: [dynamic]LexedBlock
     separators := make([]u8, n)
     defer delete(separators)
     for i := u8(0); i < n; i += 1 {
@@ -64,22 +70,27 @@ lexer_split :: proc(machine: ^Machine, input: string) -> [dynamic]string {
     }
     offset := 0
     for index := 0; index < len(input); index += 1 {
+        if len(ret) > int(limit) do return ret
         c := u8(input[index])
         if c == ' ' {
             word := input[offset:index]
+            if len(word) > 0 do append(&ret, LexedBlock{word=word, index=u8(offset)})
             offset = index + 1
-            if len(word) > 0 do append(&ret, word)
             continue
         }
         if slice.contains(separators, c) {
             word := input[offset:index]
-            if len(word) > 0 do append(&ret, word)
-            append(&ret, input[index:][:1])
+            if len(word) > 0 {
+                append(&ret, LexedBlock{word=word, index=u8(offset)})
+                if len(ret) > int(limit) do return ret
+            }
+            append(&ret, LexedBlock{word=input[index:][:1], index=u8(index)})
             offset = index + 1
         }
     }
+    if len(ret) > int(limit) do return ret
     word := input[offset:]
-    if len(word) > 0 do append(&ret, word)
+    if len(word) > 0 do append(&ret, LexedBlock{word=word, index=u8(offset)})
     return ret
 }
 
@@ -92,21 +103,21 @@ lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
 
     input := lexer_read(machine, text)
     defer delete(input)
-    words := lexer_split(machine, input)
-    defer delete(words)
+    limit := machine_read_byte(machine, parse)
+    blocks := lexer_split(machine, input, limit)
+    defer delete(blocks)
+    machine_write_byte(machine, parse + 1, u8(len(blocks)))
 
     data: []u16
     if header.version >= 4 do data = make([]u16, 3)
     else do data = make([]u16, 2)
-    for word in words {
-        zstring_encode(machine, word, &data)
-        // For each word
-        // - Find dict entry
-        //  - Binary search
-        // - Write parse table entry
-        // Write parse table length
+    parse_entry := parse + 2
+    for block in blocks {
+        zstring_encode(machine, block.word, &data)
+        addr := dictionary_search(machine, data)
+        machine_write_word(machine, parse_entry, u16(addr))
+        machine_write_byte(machine, parse_entry + 2, u8(len(block.word)))
+        machine_write_byte(machine, parse_entry + 3, block.index)
+        parse_entry += 4
     }
-
-
-    if true do unimplemented()
 }
