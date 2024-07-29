@@ -47,6 +47,7 @@ execute :: proc(machine: ^Machine) {
 
         instruction := instruction_read(machine, current_frame.pc)
         current_frame.pc += u32(instruction.length)
+        defer delete_instruction(instruction)
 
         if .frame in machine.trace do frame_dump(current_frame^)
         if .instruction in machine.trace {
@@ -93,6 +94,7 @@ execute :: proc(machine: ^Machine) {
                         routine.variables[i - 1] = value
                     }
                     append(&machine.frames, routine)
+                    continue
                 }
 
             case .DEC_CHK:
@@ -408,6 +410,5 @@ execute :: proc(machine: ^Machine) {
             }
         }
 
-        delete_instruction(instruction)
     }
 }
