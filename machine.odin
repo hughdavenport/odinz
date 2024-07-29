@@ -8,6 +8,7 @@ Trace :: bit_set[enum {
     instruction,
     read,
     write,
+    frame,
 }]
 
 Machine :: struct {
@@ -127,7 +128,7 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
             if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
             word := current_frame.variables[variable - 1]
             if .read in machine.trace {
-                fmt.printfln("READ L%02x: 0x%04x", variable, word)
+                fmt.printfln("READ @ L%02x: 0x%04x", variable - 1, word)
             }
             return word
 
@@ -149,7 +150,7 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
         case 1..<16:
             if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
             if .write in machine.trace {
-                fmt.printfln("WRITE L%02x: 0x%04x", variable, value)
+                fmt.printfln("WRITE @ L%02x: 0x%04x", variable - 1, value)
             }
             current_frame.variables[variable - 1] = value
 

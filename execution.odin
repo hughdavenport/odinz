@@ -48,8 +48,8 @@ execute :: proc(machine: ^Machine) {
         instruction := instruction_read(machine, current_frame.pc)
         current_frame.pc += u32(instruction.length)
 
+        if .frame in machine.trace do frame_dump(current_frame^)
         if .instruction in machine.trace {
-            fmt.println(current_frame^)
             for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
             instruction_dump(machine, &instruction, len(machine.frames) - 1)
         }

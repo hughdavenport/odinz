@@ -3,6 +3,7 @@ package odinz
 import "core:fmt"
 
 Frame :: struct {
+    address: u32 `fmt:"04x"`,
     pc: u32 `fmt:"04x"`,
     variables: []u16 `fmt:"04x"`,
     stack: [dynamic]u16 `fmt:"04x"`,
@@ -29,6 +30,7 @@ frame_next_word :: proc(machine: ^Machine, frame: ^Frame) -> u16 {
 }
 
 routine_read :: proc(machine: ^Machine, address: u32) -> (frame: Frame) {
+    frame.address = address
     frame.pc = address
     variables := frame_next_byte(machine, &frame)
     frame.variables = make([]u16, variables)
@@ -39,6 +41,11 @@ routine_read :: proc(machine: ^Machine, address: u32) -> (frame: Frame) {
         }
     }
     return frame
+}
+
+frame_dump :: proc(frame: Frame) {
+    fmt.printfln("FRAME: Routine %04x, %d locals %02x, Stack %02x",
+                 frame.address, len(frame.variables), frame.variables, frame.stack)
 }
 
 packed_addr :: proc(machine: ^Machine, address: u16) -> u32 {
