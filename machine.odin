@@ -6,6 +6,7 @@ import "core:slice"
 
 Machine :: struct {
     romfile: string,
+    trace: bool,
     memory: []u8,
     frames: [dynamic]Frame,
 }
@@ -13,7 +14,7 @@ Machine :: struct {
 machine_header :: proc(machine: ^Machine) -> ^Header {
     raw_header := machine.memory[0:0x40]
     ptr, ok := slice.get_ptr(raw_header, 0)
-    if !ok do error("Could not get header slice")
+    if !ok do unreach("Could not get header slice")
     return transmute(^Header)ptr;
 }
 
