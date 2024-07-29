@@ -1,6 +1,7 @@
 package odinz
 
 import "core:fmt"
+import "base:runtime"
 
 OpcodeType :: enum {
     VAR,
@@ -103,6 +104,10 @@ two_ops := [?]Opcode{
     0x15 = .SUB,
 }
 
+// https://zspec.jaredreisinger.com/14-opcode-table
+ext_ops := [?]Opcode{
+}
+
 opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
     ops: []Opcode
     switch type {
@@ -110,26 +115,35 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
         case .ZERO: ops = zero_ops[:]
         case .ONE: ops = one_ops[:]
         case .TWO: ops = two_ops[:]
-        case .EXT: unimplemented()
+        case .EXT: ops = ext_ops[:]
     }
     if int(num) >= len(ops) || ops[num] == .UNKNOWN {
         type_s: string
         offset: u8
+        loc: runtime.Source_Code_Location
         switch type {
             case .VAR:
+                loc = #location(var_ops)
                 type_s = "VAR"
                 offset = 224
             case .ZERO:
+                loc = #location(zero_ops)
                 type_s = "0OP"
                 offset = 176
             case .ONE:
+                loc = #location(one_ops)
                 type_s = "1OP"
                 offset = 128
-            case .TWO: type_s = "2OP"
-            case .EXT: type_s = "EXT"
+            case .TWO:
+                loc = #location(two_ops)
+                type_s = "2OP"
+            case .EXT:
+                loc = #location(ext_ops)
+                type_s = "EXT"
         }
         fmt.println()
-        unimplemented(fmt.tprintf("\n%x: %s:%d %02x", address, type_s, num + offset, num))
+        fmt.printfln("%s Unimplemented Opcode 0x%02x\n%x: %s:%d %02x", loc, num, address, type_s, num + offset, num)
+        unimplemented()
     }
     return ops[num]
 }
