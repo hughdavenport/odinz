@@ -95,6 +95,17 @@ execute :: proc(machine: ^Machine) {
                     append(&machine.frames, routine)
                 }
 
+            case .DEC_CHK:
+                // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                value := machine_read_operand(machine, &instruction.operands[1])
+                x := machine_read_variable(machine, variable)
+                x -= 1
+                machine_write_variable(machine, variable, x)
+                jump_condition = x < value
+
             case .GET_CHILD:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_child
                 assert(len(instruction.operands) == 1)
@@ -179,6 +190,13 @@ execute :: proc(machine: ^Machine) {
                 }
                 break
 
+            case .JG:
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                jump_condition = a > b
+
             case .JIN:
                 // https://zspec.jaredreisinger.com/15-opcodes#jin
                 assert(len(instruction.operands) == 2)
@@ -227,6 +245,14 @@ execute :: proc(machine: ^Machine) {
                 array := machine_read_operand(machine, &instruction.operands[0])
                 index := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
+
+            case .MUL:
+                // https://zspec.jaredreisinger.com/15-opcodes#mul
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), u16(a * b))
 
             case .NEW_LINE:
                 // https://zspec.jaredreisinger.com/15-opcodes#new_line

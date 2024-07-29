@@ -73,10 +73,12 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .ADD,
              .AND,
              .JE,
+             .JG,
              .JL,
              .JZ,
              .LOADB,
              .LOADW,
+             .MUL,
              .NEW_LINE,
              .PRINT_CHAR,
              .PRINT_NUM,
@@ -119,7 +121,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             if len(instruction.operands) >= 2 do fmt.print(",")
             operands_dump(instruction.operands[1:])
 
-        case .INC,
+        case .DEC_CHK,
+             .INC,
              .INC_CHK:
             assert(len(instruction.operands) >= 1)
             variable_dump(instruction.operands[0].value)
