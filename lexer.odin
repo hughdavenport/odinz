@@ -117,7 +117,7 @@ lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
         addr := dictionary_search(machine, data)
         machine_write_word(machine, parse_entry, u16(addr))
         machine_write_byte(machine, parse_entry + 2, u8(len(block.word)))
-        machine_write_byte(machine, parse_entry + 3, block.index)
+        machine_write_byte(machine, parse_entry + 3, block.index + 1)
         parse_entry += 4
     }
 }

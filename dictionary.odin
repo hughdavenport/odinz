@@ -30,5 +30,5 @@ dictionary_search :: proc(machine: ^Machine, search: []u16) -> u32 {
 
     index := dictionary_search_chop(machine, entries, length, search, 0, count)
     if index == 0 do return 0
-    return entries + length * index
+    return entries + length * (index - 1)
 }

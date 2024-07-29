@@ -110,10 +110,10 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 variable := machine_read_operand(machine, &instruction.operands[0])
-                value := machine_read_operand(machine, &instruction.operands[1])
-                x := machine_read_variable(machine, variable)
+                value := i16(machine_read_operand(machine, &instruction.operands[1]))
+                x := i16(machine_read_variable(machine, variable))
                 x -= 1
-                machine_write_variable(machine, variable, x)
+                machine_write_variable(machine, variable, u16(x))
                 jump_condition = x < value
 
             case .GET_CHILD:
@@ -171,10 +171,10 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_branch)
                 variable := machine_read_operand(machine, &instruction.operands[0])
-                value := machine_read_operand(machine, &instruction.operands[1])
-                x := machine_read_variable(machine, variable)
+                value := i16(machine_read_operand(machine, &instruction.operands[1]))
+                x := i16(machine_read_variable(machine, variable))
                 x += 1
-                machine_write_variable(machine, variable, x)
+                machine_write_variable(machine, variable, u16(x))
                 jump_condition = x > value
 
             case .INSERT_OBJ:
