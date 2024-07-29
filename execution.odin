@@ -50,6 +50,14 @@ execute :: proc(machine: ^Machine) {
         defer delete_instruction(instruction)
 
         if .frame in machine.trace do frame_dump(current_frame^)
+        if .backtrace in machine.trace {
+            fmt.println("BACKTRACE:")
+            for i := len(machine.frames) - 1; i >= 0; i -= 1 {
+                frame := machine.frames[i]
+                fmt.printfln("%d  %04x in routine %04x",
+                    len(machine.frames) - 1 - i, frame.pc, frame.address)
+            }
+        }
         if .instruction in machine.trace {
             for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
             instruction_dump(machine, &instruction, len(machine.frames) - 1)

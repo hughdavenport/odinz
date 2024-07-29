@@ -15,12 +15,14 @@ EXIT_CODE :: enum int {
 
 @(private="file")
 usage_and_exit :: proc(progname: string) -> ! {
-    fmt.eprintfln("Usage: %s [OPTIONS] [--] romfile", progname)
+    fmt.eprintfln("Usage: %s [OPTIONS] [--] romfile [OPTIONS]", progname)
     fmt.eprintln("OPTIONS:")
     fmt.eprintln("    -t|--trace[=all]           Enable all traces listed below")
-    fmt.eprintln("    -ti|--trace=instruction    Enable tracing of instructions")
-    fmt.eprintln("    -tr|--trace=read           Enable tracing of reads")
-    fmt.eprintln("    -tw|--trace=write          Enable tracing of writes")
+    fmt.eprintln("    -tf|--trace=frame          Enable tracing of frame before each instruction")
+    fmt.eprintln("    -tb|--trace=backtrace      Enable tracing of machine backtrace before each instruction")
+    fmt.eprintln("    -ti|--trace=instruction    Enable tracing of each instruction")
+    fmt.eprintln("    -tr|--trace=read           Enable tracing of all reads")
+    fmt.eprintln("    -tw|--trace=write          Enable tracing of all writes")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -38,6 +40,26 @@ unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc :
     unreachable()
 }
 
+check_args :: proc(progname: string, args: ^[]string) -> (trace: Trace) {
+    for len(args^) > 0 && strings.has_prefix(args^[0], "-") {
+        if args^[0] == "--" {
+            args^ = args^[1:]
+            break
+        }
+        switch args^[0] {
+            case "-t", "--trace", "--trace=all": trace = ~{}
+            case "-tb", "--trace=backtrace": trace |= {.backtrace}
+            case "-tf", "--trace=frame": trace |= {.frame}
+            case "-ti", "--trace=instruction": trace |= {.instruction}
+            case "-tr", "--trace=read": trace |= {.read}
+            case "-tw", "--trace=write": trace |= {.write}
+            case: usage_and_exit(progname)
+        }
+        args^ = args^[1:]
+    }
+    return trace
+}
+
 main :: proc() {
     trace: Trace
 
@@ -45,24 +67,14 @@ main :: proc() {
     progname := args[0]
     args = args[1:]
 
-    for len(args) > 0 && strings.has_prefix(args[0], "-") {
-        if args[0] == "--" {
-            args = args[1:]
-            break
-        }
-        switch args[0] {
-            case "-t", "--trace", "--trace=all": trace = ~{}
-            case "-ti", "--trace=instruction": trace |= {.instruction}
-            case "-tr", "--trace=read": trace |= {.read}
-            case "-tw", "--trace=write": trace |= {.write}
-            case: usage_and_exit(progname)
-        }
-        args = args[1:]
-    }
+    trace = check_args(progname, &args)
 
     if len(args) == 0 do usage_and_exit(progname)
     romfile := args[0]
+    args = args[1:]
     if !os.exists(romfile) do error(fmt.tprintf("File '%s' does not exist", romfile), EXIT_CODE.no_input)
+
+    trace = check_args(progname, &args)
 
     data, ok := os.read_entire_file(romfile)
     if !ok do error(fmt.tprintf("Could not read '%s'", romfile), EXIT_CODE.io_error)

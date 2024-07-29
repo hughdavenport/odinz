@@ -9,6 +9,7 @@ Trace :: bit_set[enum {
     read,
     write,
     frame,
+    backtrace,
 }]
 
 Machine :: struct {
@@ -88,6 +89,7 @@ machine_write_word :: proc(machine: ^Machine, address: u32, value: u16) {
         fmt.printfln("WRITE @ 0x%04x: 0x%04x", address, value)
         machine_write_byte(machine, address, u8(value >> 8))
         machine_write_byte(machine, address + 1, u8(value))
+        return
     }
     machine_write_byte(machine, address, u8(value >> 8))
     machine_write_byte(machine, address + 1, u8(value))
@@ -110,6 +112,7 @@ machine_write_global :: proc(machine: ^Machine, global: u16, value: u16) {
         defer machine.trace |= {.write}
         fmt.printfln("WRITE @ G%02x: 0x%04x", global, value)
         machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
+        return
     }
     machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
 }
@@ -181,6 +184,6 @@ initialise_machine :: proc(machine: ^Machine) {
     })
     // FIXME set various bits and stuff in header
 
-    fmt.println("machine.odin:124: initialise_machine: WARN: Disabling status line")
+    // fmt.printfln("%s initialise_machine: WARN: Disabling status line", #location())
     header.flags1 = transmute(u8)(transmute(Flags1_V3)header.flags1 + {.status_unavail})
 }
