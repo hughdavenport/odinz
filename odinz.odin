@@ -36,7 +36,7 @@ unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc :
 }
 
 main :: proc() {
-    trace: bool
+    trace: Trace
 
     args := os.args
     progname := args[0]
@@ -48,7 +48,7 @@ main :: proc() {
             break
         }
         switch args[0] {
-            case "-t", "--trace": trace = true
+            case "-t", "--trace": trace = trace | {.instruction}
             case: usage_and_exit(progname)
         }
         args = args[1:]

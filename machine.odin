@@ -4,9 +4,13 @@ import "core:fmt"
 import "core:os"
 import "core:slice"
 
+Trace :: bit_set[enum {
+    instruction,
+}]
+
 Machine :: struct {
     romfile: string,
-    trace: bool,
+    trace: Trace,
     memory: []u8,
     frames: [dynamic]Frame,
 }
