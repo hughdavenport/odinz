@@ -116,8 +116,21 @@ machine_write_global :: proc(machine: ^Machine, global: u16, value: u16) {
 machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
     current_frame := &machine.frames[len(machine.frames) - 1]
     switch variable {
-        case 0: return pop(&current_frame.stack)
-        case 1..<16: return current_frame.variables[variable - 1]
+        case 0:
+            if len(current_frame.stack) == 0 do unreach("Stack underflow")
+            if .read in machine.trace {
+                fmt.printfln("READ @ STACK: 0x%04x, %v", current_frame.stack[0], current_frame.stack[1:])
+            }
+            return pop(&current_frame.stack)
+
+        case 1..<16:
+            if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
+            word := current_frame.variables[variable - 1]
+            if .read in machine.trace {
+                fmt.printfln("READ L%02x: 0x%04x", variable, word)
+            }
+            return word
+
         case 16..<255: return machine_read_global(machine, variable - 16)
         case:
             unreach("Error while reading variable. Unexpected number %d",
@@ -128,8 +141,18 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
 machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
     current_frame := &machine.frames[len(machine.frames) - 1]
     switch variable {
-        case 0: append(&current_frame.stack, value)
-        case 1..<16: current_frame.variables[variable - 1] = value
+        case 0:
+            append(&current_frame.stack, value)
+            if .write in machine.trace {
+                fmt.printfln("WRITE @ STACK: 0x%04x, %v", value, current_frame.stack)
+            }
+        case 1..<16:
+            if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
+            if .write in machine.trace {
+                fmt.printfln("WRITE L%02x: 0x%04x", variable, value)
+            }
+            current_frame.variables[variable - 1] = value
+
         case 16..<255: machine_write_global(machine, variable - 16, value)
         case:
             unreach("Error while writing variable. Unexpected number %d",
