@@ -49,12 +49,13 @@ instruction_read_branch :: proc(machine: ^Machine, instruction: ^Instruction) {
     if instruction.has_branch {
         byte := instruction_next_byte(machine, instruction)
         instruction.branch_condition = bit(byte, 7)
-        instruction.branch_offset = i16(byte & 0b111111)
+        instruction.branch_offset = i16(byte & 0b111111) // Really this is unsigned, but i16 fits 0-63
 
         if !bit(byte, 6) {
             instruction.branch_offset = instruction.branch_offset << 8 + i16(instruction_next_byte(machine, instruction) & 0xFF)
             if bit(byte, 5) {
-                instruction.branch_offset = instruction.branch_offset | 0b11 << 13 // Sign extend
+                // Negative offset, sign extend
+                instruction.branch_offset = instruction.branch_offset | transmute(i16)u16(0b11 << 14)
             }
         }
     }
