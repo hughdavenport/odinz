@@ -378,6 +378,15 @@ execute :: proc(machine: ^Machine) {
                 value := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, variable, value)
 
+            case .STOREB:
+                // https://zspec.jaredreisinger.com/15-opcodes#storeb
+                assert(len(instruction.operands) == 3)
+                array := machine_read_operand(machine, &instruction.operands[0])
+                index := machine_read_operand(machine, &instruction.operands[1])
+                value := machine_read_operand(machine, &instruction.operands[2])
+                assert(value <= 255)
+                machine_write_byte(machine, u32(array + index), u8(value))
+
             case .STOREW:
                 // https://zspec.jaredreisinger.com/15-opcodes#storew
                 assert(len(instruction.operands) == 3)
