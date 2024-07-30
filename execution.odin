@@ -319,7 +319,6 @@ execute :: proc(machine: ^Machine) {
                 zstring_dump(machine, str_addr)
 
                 fmt.println()
-                unimplemented()
 
             case .PULL:
                 // https://zspec.jaredreisinger.com/15-opcodes#pull
