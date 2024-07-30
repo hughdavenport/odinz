@@ -105,6 +105,14 @@ execute :: proc(machine: ^Machine) {
                     continue
                 }
 
+            case .CLEAR_ATTR:
+                // https://zspec.jaredreisinger.com/15-opcodes#clear_attr
+                assert(len(instruction.operands) == 2)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                attribute := machine_read_operand(machine, &instruction.operands[1])
+                object_clear_attr(machine, object, attribute)
+
             case .DEC_CHK:
                 // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
                 assert(len(instruction.operands) == 2)

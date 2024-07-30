@@ -34,6 +34,18 @@ object_dump :: proc(machine: ^Machine, object_number: u16) {
     zstring_dump(machine, u32(properties) + 1, length)
 }
 
+object_clear_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
+    header := machine_header(machine)
+    addr := object_addr(machine, object_number)
+    if header.version <= 3 do assert(attribute <= 32)
+    else do assert(attribute <= 48)
+
+    attribute_addr := u32(addr + (attribute / 8))
+    mask := u8(1 << (7 - (attribute % 8)))
+    orig := machine_read_byte(machine, attribute_addr)
+    machine_write_byte(machine, attribute_addr, orig & ~mask)
+}
+
 object_set_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
