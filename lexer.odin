@@ -30,7 +30,7 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
         }
 
         read, err := os.read(os.stdin, data)
-        if err != os.ERROR_NONE {
+        if read == 0 || err != os.ERROR_NONE {
             fmt.println(err)
             unimplemented("Error handling")
         }
