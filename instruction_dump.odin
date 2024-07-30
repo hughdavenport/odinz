@@ -113,6 +113,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .GET_CHILD,
              .GET_PARENT,
              .GET_PROP,
+             .GET_PROP_ADDR,
              .GET_SIBLING,
              .INSERT_OBJ,
              .PUT_PROP,
