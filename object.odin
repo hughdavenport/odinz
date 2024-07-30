@@ -77,24 +77,34 @@ object_get_property_addr :: proc(machine: ^Machine, object_number: u16, property
     }
 }
 
-object_get_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
+object_get_property_len :: proc(machine: ^Machine, property_address: u16) -> u16 {
     header := machine_header(machine)
-    addr := object_get_property_addr(machine, object_number, property_number)
     if header.version <= 3 {
-        if addr == 0 do return machine_read_word(machine, u32(2 * (property_number - 1) + u16(header.objects)))
-        size := machine_read_byte(machine, u32(addr) - 1)
+        if property_address == 0 do return 0
+        size := machine_read_byte(machine, u32(property_address) - 1)
         length := size >> 5 + 1
-        switch length {
-            case 1: return u16(machine_read_byte(machine, u32(addr)))
-            case 2: return machine_read_word(machine, u32(addr))
-            case:
-                unreach("Reading value of object %d property %d failed: Expected length of 1 or 2. Got %d",
-                        object_number, property_number, length, machine=machine)
-        }
-        unreachable()
+        return u16(length)
     } else {
         unimplemented("V4+ property tables")
     }
+}
+
+object_get_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
+    header := machine_header(machine)
+    addr := object_get_property_addr(machine, object_number, property_number)
+    if addr == 0 {
+        if header.version <= 3 do return machine_read_word(machine, u32(2 * (property_number - 1) + u16(header.objects)))
+        else do unimplemented("V4+ property tables")
+    }
+    length := object_get_property_len(machine, addr)
+    switch length {
+        case 1: return u16(machine_read_byte(machine, u32(addr)))
+        case 2: return machine_read_word(machine, u32(addr))
+        case:
+            unreach("Reading value of object %d property %d failed: Expected length of 1 or 2. Got %d",
+                    object_number, property_number, length, machine=machine)
+    }
+    unreachable()
 }
 
 object_put_property :: proc(machine: ^Machine, object_number: u16, property_number: u16, value: u16) {

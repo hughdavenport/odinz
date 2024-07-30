@@ -157,6 +157,15 @@ execute :: proc(machine: ^Machine) {
                 addr := object_get_property_addr(machine, object, property)
                 machine_write_variable(machine, u16(instruction.store), addr)
 
+            case .GET_PROP_LEN:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_prop_len
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                address := machine_read_operand(machine, &instruction.operands[0])
+                if address == 0 do unimplemented("return 0")
+                len := object_get_property_len(machine, address)
+                machine_write_variable(machine, u16(instruction.store), len)
+
             case .GET_SIBLING:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_sibling
                 assert(len(instruction.operands) == 1)

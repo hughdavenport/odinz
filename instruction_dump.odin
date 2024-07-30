@@ -72,6 +72,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .UNKNOWN: unreach("Invalid opcode while dumping instruction", machine=machine)
         case .ADD,
              .AND,
+             .GET_PROP_LEN,
              .JE,
              .JG,
              .JL,
