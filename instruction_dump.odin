@@ -90,7 +90,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .RFALSE,
              .RTRUE,
              .STOREW,
-             .SUB:
+             .SUB,
+             .TEST:
             operands_dump(instruction.operands[:])
 
         case .CALL:

@@ -394,6 +394,14 @@ execute :: proc(machine: ^Machine) {
                 b := i16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), u16(a - b))
 
+            case .TEST:
+                // https://zspec.jaredreisinger.com/15-opcodes#test
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                bitmap := machine_read_operand(machine, &instruction.operands[0])
+                flags := machine_read_operand(machine, &instruction.operands[1])
+                jump_condition = bitmap & flags == flags
+
             case .TEST_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#test_attr
                 assert(len(instruction.operands) == 2)

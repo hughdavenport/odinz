@@ -52,6 +52,7 @@ Opcode :: enum {
     STORE,
     STOREW,
     SUB,
+    TEST,
     TEST_ATTR,
 }
 
@@ -97,6 +98,7 @@ two_ops := [?]Opcode{
     0x04 = .DEC_CHK,
     0x05 = .INC_CHK,
     0x06 = .JIN,
+    0x07 = .TEST,
     0x09 = .AND,
     0x0A = .TEST_ATTR,
     0x0B = .SET_ATTR,
@@ -166,6 +168,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .JIN,
              .JL,
              .JZ,
+             .TEST,
              .TEST_ATTR: return true
 
         // Instruction does not need to branch
@@ -194,7 +197,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .READ: if header.version >= 5 do return true
 
         // Instruction does not need to store
-        case .DEC_CHK, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST_ATTR:
+        case .DEC_CHK, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PUSH, .PUT_PROP, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .TEST, .TEST_ATTR:
     }
     return false
 }
@@ -205,7 +208,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT: return true
 
         // Instruction does not need a zstring
-        case .ADD, .AND, .CALL, .DEC_CHK, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .MUL, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .DEC_CHK, .GET_CHILD, .GET_PARENT, .GET_PROP, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .MUL, .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREW, .SUB, .TEST, .TEST_ATTR:
     }
     return false
 }
