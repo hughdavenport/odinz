@@ -150,6 +150,20 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
     }
 }
 
+@(private="file")
+object_set_child :: proc(machine: ^Machine, object_number: u16, child: u16) {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        assert(child <= 255)
+        machine_write_byte(machine, u32(obj + 6), u8(child))
+    } else {
+        machine_write_word(machine, u32(obj + 10), child)
+    }
+}
+
 object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
     assert(object_number != 0)
     header := machine_header(machine)
@@ -163,6 +177,20 @@ object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
     unreach()
 }
 
+@(private="file")
+object_set_sibling :: proc(machine: ^Machine, object_number: u16, sibling: u16) {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        assert(sibling <= 255)
+        machine_write_byte(machine, u32(obj + 5), u8(sibling))
+    } else {
+        machine_write_word(machine, u32(obj + 8), sibling)
+    }
+}
+
 object_sibling :: proc(machine: ^Machine, object_number: u16) -> u16 {
     assert(object_number != 0)
     header := machine_header(machine)
@@ -174,6 +202,20 @@ object_sibling :: proc(machine: ^Machine, object_number: u16) -> u16 {
         return machine_read_word(machine, u32(obj + 8))
     }
     unreach()
+}
+
+@(private="file")
+object_set_parent :: proc(machine: ^Machine, object_number: u16, parent: u16) {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        assert(parent <= 255)
+        machine_write_byte(machine, u32(obj + 4), u8(parent))
+    } else {
+        machine_write_word(machine, u32(obj + 6), parent)
+    }
 }
 
 object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
@@ -195,6 +237,22 @@ object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     dest := object_addr(machine, destination_number)
+
+    // First remove object from where it was in the tree
+    obj_parent := object_parent(machine, object_number)
+    if obj_parent != 0 {
+        obj_parent_child := object_child(machine, obj_parent)
+        sibling := object_sibling(machine, object_number)
+        if obj_parent_child == object_number {
+            object_set_child(machine, obj_parent, sibling)
+        } else {
+            child := obj_parent_child
+            for ; child != 0 && object_sibling(machine, child) != object_number ;
+                  child = object_sibling(machine, child) {}
+            object_set_sibling(machine, child, sibling)
+        }
+    }
+
     if header.version <= 3 {
         assert(object_number <= 255)
         assert(destination_number <= 255)
