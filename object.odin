@@ -130,7 +130,6 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
             if size == 0 do break
             length := size >> 5 + 1
             prop_num := size & 0b11111
-            debug("prop_num = %d", prop_num)
             if u16(prop_num) < property_number {
                 unreach("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
                         object_number, object_name(machine, object_number), property_number, prop_num, machine=machine)
@@ -143,6 +142,7 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
                         unreach("Writing value to object %d property %d failed: Expected length of 1 or 2. Got %d",
                                 object_number, property_number, length, machine=machine)
                 }
+                return
             }
             property += u16(length) + 1
         }
