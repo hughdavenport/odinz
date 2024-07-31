@@ -1,5 +1,6 @@
 package odinz
 
+import "core:c/libc"
 import "core:fmt"
 import "base:runtime"
 
@@ -141,6 +142,7 @@ one_ops := [?]Opcode{
 
 // https://zspec.jaredreisinger.com/14-opcode-table
 two_ops := [?]Opcode{
+    0x00 = .UNKNOWN,
     0x01 = .JE,
     0x02 = .JL,
     0x03 = .JG,
@@ -148,6 +150,7 @@ two_ops := [?]Opcode{
     0x05 = .INC_CHK,
     0x06 = .JIN,
     0x07 = .TEST,
+    0x08 = .UNKNOWN,
     0x09 = .AND,
     0x0A = .TEST_ATTR,
     0x0B = .SET_ATTR,
@@ -177,7 +180,7 @@ two_ops := [?]Opcode{
 ext_ops := [?]Opcode{
 }
 
-opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
+opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Opcode {
     ops: []Opcode
     switch type {
         case .VAR: ops = var_ops[:]
@@ -213,6 +216,9 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
         loc.line += i32(num) + 1 // Where the entry should be (if array filled til then)
         fmt.println()
         fmt.printfln("%s Unimplemented Opcode 0x%02X\n%x: %s:%d %02x", loc, num, address, type_s, num + offset, num)
+        cmd := fmt.ctprintf("txd -n %s | grep %x:", machine.romfile, address)
+        debug("CMD: %v", cmd)
+        libc.system(cmd)
         unimplemented()
     }
     return ops[num]
