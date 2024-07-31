@@ -334,13 +334,12 @@ execute :: proc(machine: ^Machine) {
                 packed := machine_read_operand(machine, &instruction.operands[0])
                 str_addr := packed_addr(machine, packed)
                 zstring_dump(machine, str_addr)
-                fmt.println()
 
             case .PRINT_RET:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_ret
                 assert(len(instruction.operands) == 0)
                 assert(instruction.has_zstring)
-                fmt.print(instruction.zstring)
+                fmt.println(instruction.zstring)
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
                 delete_frame(current_frame)
