@@ -79,10 +79,10 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
                         case .ZSCII_1, .ZSCII_2, .ABBREV:
                             fallthrough
                         case:
-                            unreach("Parsing zstring failed. Invalid mode");
+                            unreachable("Parsing zstring failed. Invalid mode");
                     }
                 case:
-                    unreach("Parsing zstring failed. Invalid zchar %d", zchar, machine=machine);
+                    unreachable("Parsing zstring failed. Invalid zchar %d", zchar)
             }
 
         case .ZSCII_1:
@@ -104,7 +104,7 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
             zstring.mode = .A0
 
         case:
-            unreach("Parsing zstring failed. Invalid mode", machine=machine);
+            unreachable("Parsing zstring failed. Invalid mode")
     }
 }
 
@@ -114,7 +114,7 @@ delete_zstring :: proc(zstring: ZString) {
 
 zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> string {
     sb, err := strings.builder_make_none()
-    if err != nil do unreach("Buy more RAM: %v", err, machine=machine);
+    if err != nil do unreachable("Buy more RAM: %v", err)
     zstring := ZString{sb = &sb}
     defer delete_zstring(zstring)
     if length != nil && length^ > 0 {
@@ -125,14 +125,14 @@ zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> stri
             zstring_process_zchar(machine, &zstring, u8((word >> 5) & 0b11111))
             zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
             if i < length^ - 1 && bit(u8(word >> 8), 7) {
-                unreach("Not the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is set\n" +
+                unreachable("Not the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is set\n" +
                         "Processed %d words, zstring so far is \"%s\", and this word just processed is 0b%16b",
                         length^, address, i, strings.to_string(zstring.sb^), word)
             }
             if i == length^ - 1 && !bit(u8(word >> 8), 7) {
-                unreach("On the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is NOT set\n" +
-                        "Zstring is \"%s\", and this word just processed is 0b%16b",
-                        length^, address, strings.to_string(zstring.sb^), word)
+                unreachable("On the last word of a %d length zstring @ 0x%16x, but bit 7 of first byte is NOT set\n" +
+                            "Zstring is \"%s\", and this word just processed is 0b%16b",
+                            length^, address, strings.to_string(zstring.sb^), word)
             }
         }
     } else {
@@ -148,7 +148,7 @@ zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> stri
         if length != nil do length^ = u8(i + 2)
     }
     ret, err2 := strings.clone(strings.to_string(zstring.sb^))
-    if err2 != nil do unreach("Buy more RAM: %v", err2, machine=machine)
+    if err2 != nil do unreachable("Buy more RAM: %v", err2)
     return ret
 }
 
@@ -163,30 +163,30 @@ zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
     // Must be defined for output in ZSCII (S3.8 in specs)
     switch char {
         case 0: return "" // null, no-op for output
-        case 1..=7: unreach()
-        case 8: unreach() // delete, undefined for output
+        case 1..=7: unreachable()
+        case 8: unreachable() // delete, undefined for output
         case 9:
-            if header.version != 6 do unreach() // undefined
+            if header.version != 6 do unreachable() // undefined
             return "\t"
-        case 10: unreach()
+        case 10: unreachable()
         case 11:
-            if header.version != 6 do unreach() // undefined
+            if header.version != 6 do unreachable() // undefined
             return "  "
-        case 12: unreach()
+        case 12: unreachable()
         case 13: return fmt.tprintln()
-        case 14..=26: unreach()
+        case 14..=26: unreachable()
         case 27:
             // ESC. Need to be careful about dodgy escape codes
             unimplemented()
-        case 28..=31: unreach()
+        case 28..=31: unreachable()
         case 32..=126: return fmt.tprintf("%c", char)
-        case 127, 128: unreach()
-        case 129..=154: unreach() // undefined for output
+        case 127, 128: unreachable()
+        case 129..=154: unreachable() // undefined for output
         case 155..=251:
             unimplemented("Extra characters")
-        case: unreach()
+        case: unreachable()
     }
-    unreach()
+    unreachable()
 }
 
 @(private="file")

@@ -56,10 +56,8 @@ packed_addr :: proc(machine: ^Machine, address: u16) -> u32 {
     case 6, 7: unimplemented("version 6 packed addresses") // need to get routine/string offset
     case 8: return u32(address) * 8
     case:
-        unreach("Unable to get valid version number to get packed_addr(0x%04x). Version %d",
-                address, header.version, machine=machine)
+        unreachable("Unable to get valid version number to get packed_addr(0x%04x). Version %d",
+                    address, header.version)
     }
-    unreach("Unable to get packed_addr(0x%04x). Version %d",
-            address, header.version, machine=machine)
-
+    unreachable("Unable to get packed_addr(0x%04x). Version %d", address, header.version)
 }

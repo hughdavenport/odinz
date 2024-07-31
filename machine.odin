@@ -30,14 +30,14 @@ Machine :: struct {
 machine_header :: proc(machine: ^Machine) -> ^Header {
     raw_header := machine.memory[0:0x40]
     ptr, ok := slice.get_ptr(raw_header, 0)
-    if !ok do unreach("Could not get header slice")
+    if !ok do unreachable("Could not get header slice")
     return transmute(^Header)ptr;
 }
 
 machine_dump :: proc(machine: ^Machine, to_disk := false, dump_memory := false) {
     if to_disk {
         if !os.write_entire_file("machine.dump", machine.memory) {
-            unreach("Error writing machine dump")
+            unreachable("Error writing machine dump")
         }
         return
     }
@@ -85,7 +85,7 @@ machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
-    if int(address) >= len(machine.memory) do unreach()
+    if int(address) >= len(machine.memory) do unreachable()
     if .write in machine.config.trace do fmt.printfln("WRITE @ 0x%04x: 0x%02x", address, value)
     machine.memory[address] = value
 }
@@ -129,14 +129,14 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
     current_frame := &machine.frames[len(machine.frames) - 1]
     switch variable {
         case 0:
-            if len(current_frame.stack) == 0 do unreach("Stack underflow")
+            if len(current_frame.stack) == 0 do unreachable("Stack underflow")
             if .read in machine.config.trace {
                 fmt.printfln("READ @ STACK: 0x%04x, %v", current_frame.stack[0], current_frame.stack[1:])
             }
             return pop(&current_frame.stack)
 
         case 1..<16:
-            if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
+            if int(variable) > len(current_frame.variables) do unreachable("Variable overflow")
             word := current_frame.variables[variable - 1]
             if .read in machine.config.trace {
                 fmt.printfln("READ @ L%02x: 0x%04x", variable - 1, word)
@@ -144,9 +144,7 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
             return word
 
         case 16..<255: return machine_read_global(machine, variable - 16)
-        case:
-            unreach("Error while reading variable. Unexpected number %d",
-                    variable, machine=machine)
+        case: unreachable("Error while reading variable. Unexpected number %d", variable)
     }
 }
 
@@ -159,7 +157,7 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
                 fmt.printfln("WRITE @ STACK: 0x%04x, %v", value, current_frame.stack)
             }
         case 1..<16:
-            if int(variable) > len(current_frame.variables) do unreach("Variable overflow")
+            if int(variable) > len(current_frame.variables) do unreachable("Variable overflow")
             if .write in machine.config.trace {
                 fmt.printfln("WRITE @ L%02x: 0x%04x", variable - 1, value)
             }
@@ -167,8 +165,7 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
 
         case 16..<255: machine_write_global(machine, variable - 16, value)
         case:
-            unreach("Error while writing variable. Unexpected number %d",
-                    variable, machine=machine)
+            unreachable("Error while writing variable. Unexpected number %d", variable)
     }
 }
 
@@ -177,7 +174,7 @@ machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
         case .SMALL_CONSTANT, .LARGE_CONSTANT: return operand.value
         case .VARIABLE: return machine_read_variable(machine, operand.value)
     }
-    unreach("Error while reading operand", machine=machine)
+    unreachable("Error while reading operand")
 }
 
 @(private="file")

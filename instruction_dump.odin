@@ -10,7 +10,7 @@ variable_dump :: proc(value: u16, store := false) {
         else do fmt.print("(SP)+")
     case 1..<16: fmt.printf("L%02x", value - 1)
     case 16..<256: fmt.printf("G%02x", value - 16)
-    case: unreach("Error while dumping variable. Unexpected number %d", value)
+    case: unreachable("Error while dumping variable. Unexpected number %d", value)
     }
 }
 
@@ -67,7 +67,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
     fmt.printf(" %-16s", opcode_s)
     switch instruction.opcode {
-        case .UNKNOWN: unreach("Invalid opcode while dumping instruction", machine=machine)
+        case .UNKNOWN: unreachable("Invalid opcode while dumping instruction")
         case .ADD,
              .AND,
              .DIV,

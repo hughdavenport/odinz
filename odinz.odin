@@ -41,12 +41,18 @@ debug :: proc(format: string = "", args: ..any, loc := #caller_location) {
     fmt.eprintfln(format, ..args)
 }
 
-unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
-    // if machine != nil do machine_dump(machine)
+unreachable :: proc(format: string = "", args: ..any, loc := #caller_location) -> ! {
     loc_format := "\n%s(%d:%d) %s: UNREACHABLE"
     fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
     fmt.eprintfln(format, ..args)
-    unreachable()
+    os.exit(int(EXIT_CODE.software))
+}
+
+unimplemented :: proc(format: string = "", args: ..any, loc := #caller_location) -> ! {
+    loc_format := "\n%s(%d:%d) %s: UNIMPLEMENTED"
+    fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
+    fmt.eprintfln(format, ..args)
+    os.exit(int(EXIT_CODE.software))
 }
 
 check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {

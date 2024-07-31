@@ -113,8 +113,8 @@ object_get_property :: proc(machine: ^Machine, object_number: u16, property_numb
         case 1: return u16(machine_read_byte(machine, u32(addr)))
         case 2: return machine_read_word(machine, u32(addr))
         case:
-            unreach("Reading value of object %d property %d failed: Expected length of 1 or 2. Got %d",
-                    object_number, property_number, length, machine=machine)
+            unreachable("Reading value of object %d property %d failed: Expected length of 1 or 2. Got %d",
+                        object_number, property_number, length)
     }
     unreachable()
 }
@@ -131,16 +131,16 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
             length := size >> 5 + 1
             prop_num := size & 0b11111
             if u16(prop_num) < property_number {
-                unreach("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
-                        object_number, object_name(machine, object_number), property_number, prop_num, machine=machine)
+                unreachable("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
+                            object_number, object_name(machine, object_number), property_number, prop_num)
             }
             if u16(prop_num) == property_number {
                 switch length {
                     case 1: machine_write_byte(machine, u32(property) + 1, u8(value))
                     case 2: machine_write_word(machine, u32(property) + 1, value)
                     case:
-                        unreach("Writing value to object %d property %d failed: Expected length of 1 or 2. Got %d",
-                                object_number, property_number, length, machine=machine)
+                        unreachable("Writing value to object %d property %d failed: Expected length of 1 or 2. Got %d",
+                                    object_number, property_number, length)
                 }
                 return
             }
@@ -175,7 +175,7 @@ object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
     } else {
         return machine_read_word(machine, u32(obj + 10))
     }
-    unreach()
+    unreachable()
 }
 
 @(private="file")
@@ -202,7 +202,7 @@ object_sibling :: proc(machine: ^Machine, object_number: u16) -> u16 {
     } else {
         return machine_read_word(machine, u32(obj + 8))
     }
-    unreach()
+    unreachable()
 }
 
 @(private="file")
@@ -229,7 +229,7 @@ object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
     } else {
         return machine_read_word(machine, u32(obj + 6))
     }
-    unreach()
+    unreachable()
 }
 
 object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_number: u16) {

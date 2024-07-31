@@ -73,8 +73,7 @@ execute :: proc(machine: ^Machine) {
 
         switch instruction.opcode {
             case .UNKNOWN:
-                unreach("Invalid opcode while executing instruction %v",
-                        instruction, machine=machine)
+                unreachable("Invalid opcode while executing instruction %v", instruction)
             case .ADD:
                 // https://zspec.jaredreisinger.com/15-opcodes#add
                 assert(len(instruction.operands) == 2)

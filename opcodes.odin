@@ -227,7 +227,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
+        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .DEC_CHK,
              .GET_CHILD,
              .GET_SIBLING,
@@ -249,7 +249,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
     switch opcode {
-        case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
+        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .ADD,
              .AND,
              .CALL,
@@ -277,7 +277,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreach("Invalid opcode during instruction parsing")
+        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .PRINT, .PRINT_RET: return true
 
         // Instruction does not need a zstring
