@@ -124,6 +124,14 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, variable, u16(x))
                 jump_condition = x < value
 
+            case .DIV:
+                // https://zspec.jaredreisinger.com/15-opcodes#div
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), u16(a / b))
+
             case .GET_CHILD:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_child
                 assert(len(instruction.operands) == 1)
@@ -297,6 +305,7 @@ execute :: proc(machine: ^Machine) {
 
             case .PRINT:
                 // https://zspec.jaredreisinger.com/15-opcodes#print
+                assert(len(instruction.operands) == 0)
                 assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
 
@@ -325,8 +334,17 @@ execute :: proc(machine: ^Machine) {
                 packed := machine_read_operand(machine, &instruction.operands[0])
                 str_addr := packed_addr(machine, packed)
                 zstring_dump(machine, str_addr)
-
                 fmt.println()
+
+            case .PRINT_RET:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_ret
+                assert(len(instruction.operands) == 0)
+                assert(instruction.has_zstring)
+                fmt.print(instruction.zstring)
+                pop(&machine.frames)
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
+                delete_frame(current_frame)
+                continue
 
             case .PULL:
                 // https://zspec.jaredreisinger.com/15-opcodes#pull
@@ -361,6 +379,7 @@ execute :: proc(machine: ^Machine) {
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 0)
                 delete_frame(current_frame)
+                continue
 
             case .RTRUE:
                 // https://zspec.jaredreisinger.com/15-opcodes#rtrue
@@ -368,6 +387,7 @@ execute :: proc(machine: ^Machine) {
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
                 delete_frame(current_frame)
+                continue
 
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
@@ -380,6 +400,7 @@ execute :: proc(machine: ^Machine) {
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
+                continue
 
             case .RET_POPPED:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret_popped
@@ -388,6 +409,7 @@ execute :: proc(machine: ^Machine) {
                 pop(&machine.frames)
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
+                continue
 
             case .SET_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#set_attr
@@ -457,6 +479,7 @@ execute :: proc(machine: ^Machine) {
                         machine_write_variable(machine, u16(current_frame.store), u16(offset) & 1)
                     }
                     delete_frame(current_frame)
+                    continue
                 case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
             }
         }

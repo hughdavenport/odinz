@@ -72,6 +72,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .UNKNOWN: unreach("Invalid opcode while dumping instruction", machine=machine)
         case .ADD,
              .AND,
+             .DIV,
              .GET_PROP_LEN,
              .JE,
              .JG,
@@ -164,7 +165,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
                 variable_dump(variable, store=true)
             }
 
-        case .PRINT:
+        case .PRINT, .PRINT_RET:
             fmt.printf("\"%s\"", instruction.zstring)
 
         case .PRINT_OBJ:
