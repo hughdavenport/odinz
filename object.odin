@@ -25,13 +25,13 @@ object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
     return length != 0
 }
 
-object_dump :: proc(machine: ^Machine, object_number: u16) {
-    if object_number == 0 do return
+object_name :: proc(machine: ^Machine, object_number: u16) -> string {
+    if object_number == 0 do return ""
     properties := object_properties(machine, object_number)
     length := machine_read_byte(machine, u32(properties))
 
-    if length == 0 do return
-    zstring_dump(machine, u32(properties) + 1, length)
+    if length == 0 do return ""
+    return zstring_read(machine, u32(properties) + 1, &length)
 }
 
 object_clear_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
@@ -130,9 +130,10 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
             if size == 0 do break
             length := size >> 5 + 1
             prop_num := size & 0b11111
+            debug("prop_num = %d", prop_num)
             if u16(prop_num) < property_number {
-                unreach("Writing value to object %d property %d failed: Could not find property before finding property %d",
-                        object_number, property_number, prop_num, machine=machine)
+                unreach("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
+                        object_number, object_name(machine, object_number), property_number, prop_num, machine=machine)
             }
             if u16(prop_num) == property_number {
                 switch length {

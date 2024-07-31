@@ -32,6 +32,12 @@ error :: proc(message: string, code: EXIT_CODE = EXIT_CODE.software) -> ! {
     os.exit(int(code))
 }
 
+debug :: proc(format: string = "", args: ..any, loc := #caller_location) {
+    loc_format := "\n%s(%d:%d) %s: DEBUG"
+    fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
+    fmt.eprintfln(format, ..args)
+}
+
 unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc := #caller_location) -> ! {
     // if machine != nil do machine_dump(machine)
     loc_format := "\n%s(%d:%d) %s: UNREACHABLE"

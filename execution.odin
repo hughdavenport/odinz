@@ -328,7 +328,7 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 1)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 assert(object != 0)
-                object_dump(machine, object)
+                fmt.print(object_name(machine, object))
 
             case .PRINT_PADDR:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_paddr

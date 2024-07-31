@@ -38,9 +38,7 @@ _object_dump :: proc(machine: ^Machine, operand: Operand) {
     switch operand.type {
         case .SMALL_CONSTANT, .LARGE_CONSTANT:
             if object_has_name(machine, operand.value) {
-                fmt.print('"')
-                object_dump(machine, operand.value)
-                fmt.print('"')
+                fmt.printf("\"%s\"", object_name(machine, operand.value))
             } else {
                 operand_dump(operand)
             }
