@@ -33,8 +33,8 @@ error :: proc(message: string, code: EXIT_CODE = EXIT_CODE.software) -> ! {
 }
 
 debug :: proc(format: string = "", args: ..any, loc := #caller_location) {
-    loc_format := "\n%s(%d:%d) %s: DEBUG"
-    fmt.eprintfln(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
+    loc_format := "\n%s(%d:%d) %s: DEBUG "
+    fmt.eprintf(loc_format, loc.file_path, loc.line, loc.column, loc.procedure)
     fmt.eprintfln(format, ..args)
 }
 
