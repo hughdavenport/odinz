@@ -1,6 +1,8 @@
 package odinz
 
 import "core:fmt"
+import "core:math/rand"
+import "core:time"
 
 read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     // https://zspec.jaredreisinger.com/15-opcodes#read
@@ -387,6 +389,17 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 1)
                 delete_frame(current_frame)
                 continue
+
+            case .RANDOM:
+                // https://zspec.jaredreisinger.com/15-opcodes#random
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                range := i16(machine_read_operand(machine, &instruction.operands[0]))
+                ret := u16(0)
+                if range < 0 do rand.reset(u64(abs(range)))
+                else if range == 0 do rand.reset(u64(time.time_to_unix_nano(time.now())))
+                else do ret = (u16(rand.uint32()) % (u16(range) + 1)) + 1
+                machine_write_variable(machine, u16(current_frame.store), ret)
 
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
