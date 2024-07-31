@@ -5,6 +5,14 @@ import "core:math/rand"
 import "core:os"
 import "core:time"
 
+status_line :: proc(machine: ^Machine) {
+    // https://zspec.jaredreisinger.com/08-screen#8_2
+    header := machine_header(machine)
+    if .status_unavail in transmute(Flags1_V3)header.flags1 do return
+    fmt.println()
+    unimplemented("status line")
+}
+
 read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     // https://zspec.jaredreisinger.com/15-opcodes#read
     header := machine_header(machine)
@@ -16,12 +24,7 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     assert(text != 0)
     assert(parse != 0)
 
-    if header.version >= 1 && header.version <= 3 {
-        if ! (.status_unavail in transmute(Flags1_V3)header.flags1) {
-            fmt.println()
-            unimplemented("status line")
-        }
-    }
+    if header.version >= 1 && header.version <= 3 do status_line(machine)
 
     if header.version >= 4 && len(instruction.operands) > 2 {
         assert(len(instruction.operands) == 4)
@@ -52,8 +55,8 @@ execute :: proc(machine: ^Machine) {
         current_frame.pc += u32(instruction.length)
         defer delete_instruction(instruction)
 
-        if .frame in machine.trace do frame_dump(current_frame^)
-        if .backtrace in machine.trace {
+        if .frame in machine.config.trace do frame_dump(current_frame^)
+        if .backtrace in machine.config.trace {
             fmt.println("BACKTRACE:")
             for i := len(machine.frames) - 1; i >= 0; i -= 1 {
                 frame := machine.frames[i]
@@ -61,7 +64,7 @@ execute :: proc(machine: ^Machine) {
                     len(machine.frames) - 1 - i, frame.pc, frame.address)
             }
         }
-        if .instruction in machine.trace {
+        if .instruction in machine.config.trace {
             for i := 0; i < len(machine.frames) - 1; i += 1 do fmt.print(" >  ")
             instruction_dump(machine, &instruction, len(machine.frames) - 1)
         }

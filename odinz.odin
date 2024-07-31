@@ -23,6 +23,8 @@ usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintln("    -ti|--trace=instruction    Enable tracing of each instruction")
     fmt.eprintln("    -tr|--trace=read           Enable tracing of all reads")
     fmt.eprintln("    -tw|--trace=write          Enable tracing of all writes")
+    fmt.eprintln("    -sl|--status-line          Enable status line (V1-3)")
+    fmt.eprintln("    -ss|--screen-split         Enable screen splitting (V1-3)")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -46,46 +48,48 @@ unreach :: proc(format: string = "", args: ..any, machine: ^Machine = nil, loc :
     unreachable()
 }
 
-check_args :: proc(progname: string, args: ^[]string) -> (trace: Trace) {
+check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
     for len(args^) > 0 && strings.has_prefix(args^[0], "-") {
         if args^[0] == "--" {
             args^ = args^[1:]
             break
         }
         switch args^[0] {
-            case "-t", "--trace", "--trace=all": trace = ~{}
-            case "-tb", "--trace=backtrace": trace |= {.backtrace}
-            case "-tf", "--trace=frame": trace |= {.frame}
-            case "-ti", "--trace=instruction": trace |= {.instruction}
-            case "-tr", "--trace=read": trace |= {.read}
-            case "-tw", "--trace=write": trace |= {.write}
+            case "-t", "--trace", "--trace=all": config.trace = ~{}
+            case "-tb", "--trace=backtrace": config.trace |= {.backtrace}
+            case "-tf", "--trace=frame": config.trace |= {.frame}
+            case "-ti", "--trace=instruction": config.trace |= {.instruction}
+            case "-tr", "--trace=read": config.trace |= {.read}
+            case "-tw", "--trace=write": config.trace |= {.write}
+            case "-sl", "--status-line": config.status = true
+            case "-ss", "--screen-split": config.screen_split = true
             case: usage_and_exit(progname)
         }
         args^ = args^[1:]
     }
-    return trace
+    return config
 }
 
 main :: proc() {
-    trace: Trace
+    config: Config
 
     args := os.args
     progname := args[0]
     args = args[1:]
 
-    trace = check_args(progname, &args)
+    config = check_args(progname, &args)
 
     if len(args) == 0 do usage_and_exit(progname)
     romfile := args[0]
     args = args[1:]
     if !os.exists(romfile) do error(fmt.tprintf("File '%s' does not exist", romfile), EXIT_CODE.no_input)
 
-    trace = check_args(progname, &args)
+    config = check_args(progname, &args)
 
     data, ok := os.read_entire_file(romfile)
     if !ok do error(fmt.tprintf("Could not read '%s'", romfile), EXIT_CODE.io_error)
     defer delete(data)
-    machine := &Machine{romfile=romfile, memory=data, trace=trace}
+    machine := &Machine{romfile=romfile, memory=data, config=config}
     initialise_machine(machine)
     execute(machine)
 }
