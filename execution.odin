@@ -2,6 +2,7 @@ package odinz
 
 import "core:fmt"
 import "core:math/rand"
+import "core:os"
 import "core:time"
 
 read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
@@ -400,6 +401,10 @@ execute :: proc(machine: ^Machine) {
                 else if range == 0 do rand.reset(u64(time.time_to_unix_nano(time.now())))
                 else do ret = (u16(rand.uint32()) % (u16(range) + 1)) + 1
                 machine_write_variable(machine, u16(current_frame.store), ret)
+
+            case .QUIT:
+                // https://zspec.jaredreisinger.com/15-opcodes#quit
+                os.exit(0)
 
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
