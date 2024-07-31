@@ -1,5 +1,6 @@
 package odinz
 
+import "core:c/libc"
 import "core:fmt"
 import "core:os"
 import "core:slice"
@@ -16,6 +17,7 @@ Config :: struct {
     trace: Trace,
     status: bool,
     screen_split: bool,
+    alternate_screen: bool,
 }
 
 Machine :: struct {
@@ -199,5 +201,10 @@ initialise_machine :: proc(machine: ^Machine) {
     if header.version <= 3 {
         if !machine.config.status do add_flag1_v3(machine, {.status_unavail})
         if machine.config.screen_split do add_flag1_v3(machine, {.screen_split})
+    }
+
+    if machine.config.alternate_screen {
+        fmt.print("\e[?1049h")
+        libc.atexit(proc "c" () {libc.fprintf(libc.stdout, "\e[?1049l")})
     }
 }

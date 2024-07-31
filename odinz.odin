@@ -25,6 +25,7 @@ usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintln("    -tw|--trace=write          Enable tracing of all writes")
     fmt.eprintln("    -sl|--status-line          Enable status line (V1-3)")
     fmt.eprintln("    -ss|--screen-split         Enable screen splitting (V1-3)")
+    fmt.eprintln("    -as|--alternate-screen     Enable alternate screen")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -63,6 +64,7 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             case "-tw", "--trace=write": config.trace |= {.write}
             case "-sl", "--status-line": config.status = true
             case "-ss", "--screen-split": config.screen_split = true
+            case "-as", "--alternative-screen": config.alternate_screen = true
             case: usage_and_exit(progname)
         }
         args^ = args^[1:]
