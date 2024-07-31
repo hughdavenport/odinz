@@ -261,13 +261,6 @@ object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_
         child: u16 = 6
         // move obj to be dest's child
 
-        //  update obj's sibling's parent to be obj's parent
-        obj_sibling_number := machine_read_byte(machine, u32(obj + sibling))
-        if obj_sibling_number != 0 {
-            obj_parent_number := machine_read_byte(machine, u32(obj + parent))
-            obj_sibling := object_addr(machine, u16(obj_sibling_number))
-            machine_write_byte(machine, u32(obj_sibling + parent), obj_parent_number)
-        }
 
         //  update obj's sibling to be dest's child
         dest_child_number := machine_read_byte(machine, u32(dest + child))
@@ -283,14 +276,6 @@ object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_
         sibling: u16 = 8
         child: u16 = 10
         // move obj to be dest's child
-
-        //  update obj's sibling's parent to be obj's parent
-        obj_sibling_number := machine_read_word(machine, u32(obj + sibling))
-        if obj_sibling_number != 0 {
-            obj_parent_number := machine_read_word(machine, u32(obj + parent))
-            obj_sibling := object_addr(machine, obj_sibling_number)
-            machine_write_word(machine, u32(obj_sibling + parent), obj_parent_number)
-        }
 
         //  update obj's sibling to be dest's child
         dest_child_number := machine_read_word(machine, u32(dest + child))
