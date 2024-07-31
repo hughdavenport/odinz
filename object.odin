@@ -235,8 +235,6 @@ object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_
     assert(object_number != 0)
     assert(destination_number != 0)
     header := machine_header(machine)
-    obj := object_addr(machine, object_number)
-    dest := object_addr(machine, destination_number)
 
     // First remove object from where it was in the tree
     obj_parent := object_parent(machine, object_number)
@@ -253,38 +251,7 @@ object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_
         }
     }
 
-    if header.version <= 3 {
-        assert(object_number <= 255)
-        assert(destination_number <= 255)
-        parent: u16 = 4
-        sibling: u16 = 5
-        child: u16 = 6
-        // move obj to be dest's child
-
-
-        //  update obj's sibling to be dest's child
-        dest_child_number := machine_read_byte(machine, u32(dest + child))
-        machine_write_byte(machine, u32(obj + sibling), dest_child_number)
-
-        //  update dest's child to be obj
-        machine_write_byte(machine, u32(dest + child), u8(object_number))
-
-        //  update obj's parent to be dest
-        machine_write_byte(machine, u32(obj + parent), u8(destination_number))
-    } else {
-        parent: u16 = 6
-        sibling: u16 = 8
-        child: u16 = 10
-        // move obj to be dest's child
-
-        //  update obj's sibling to be dest's child
-        dest_child_number := machine_read_word(machine, u32(dest + child))
-        machine_write_word(machine, u32(obj + sibling), dest_child_number)
-
-        //  update dest's child to be obj
-        machine_write_word(machine, u32(dest + child), object_number)
-
-        //  update obj's parent to be dest
-        machine_write_word(machine, u32(obj + parent), destination_number)
-    }
+    object_set_sibling(machine, object_number, object_child(machine, destination_number))
+    object_set_child(machine, destination_number, object_number)
+    object_set_parent(machine, object_number, destination_number)
 }
