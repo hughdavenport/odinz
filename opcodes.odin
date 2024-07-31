@@ -75,6 +75,28 @@ var_ops := [?]Opcode{
     0x07 = .RANDOM,
     0x08 = .PUSH,
     0x09 = .PULL,
+    0x0A = .UNKNOWN,
+    0x0B = .UNKNOWN,
+    0x0C = .UNKNOWN,
+    0x0D = .UNKNOWN,
+    0x0E = .UNKNOWN,
+    0x0F = .UNKNOWN,
+    0x10 = .UNKNOWN,
+    0x11 = .UNKNOWN,
+    0x12 = .UNKNOWN,
+    0x13 = .UNKNOWN,
+    0x14 = .UNKNOWN,
+    0x15 = .UNKNOWN,
+    0x16 = .UNKNOWN,
+    0x17 = .UNKNOWN,
+    0x18 = .UNKNOWN,
+    0x19 = .UNKNOWN,
+    0x1A = .UNKNOWN,
+    0x1B = .UNKNOWN,
+    0x1C = .UNKNOWN,
+    0x1D = .UNKNOWN,
+    0x1E = .UNKNOWN,
+    0x1F = .UNKNOWN,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -83,8 +105,18 @@ zero_ops := [?]Opcode{
     0x01 = .RFALSE,
     0x02 = .PRINT,
     0x03 = .PRINT_RET,
+    0x04 = .UNKNOWN,
+    0x05 = .UNKNOWN,
+    0x06 = .UNKNOWN,
+    0x07 = .UNKNOWN,
     0x08 = .RET_POPPED,
+    0x09 = .UNKNOWN,
+    0x0A = .UNKNOWN,
     0x0B = .NEW_LINE,
+    0x0C = .UNKNOWN,
+    0x0D = .UNKNOWN,
+    0x0E = .UNKNOWN,
+    0x0F = .UNKNOWN,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -95,10 +127,16 @@ one_ops := [?]Opcode{
     0x03 = .GET_PARENT,
     0x04 = .GET_PROP_LEN,
     0x05 = .INC,
+    0x06 = .UNKNOWN,
+    0x07 = .UNKNOWN,
+    0x08 = .UNKNOWN,
+    0x09 = .UNKNOWN,
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
     0x0C = .JUMP,
     0x0D = .PRINT_PADDR,
+    0x0E = .UNKNOWN,
+    0x0F = .UNKNOWN,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -120,10 +158,19 @@ two_ops := [?]Opcode{
     0x10 = .LOADB,
     0x11 = .GET_PROP,
     0x12 = .GET_PROP_ADDR,
+    0x13 = .UNKNOWN,
     0x14 = .ADD,
     0x15 = .SUB,
     0x16 = .MUL,
     0x17 = .DIV,
+    0x18 = .UNKNOWN,
+    0x19 = .UNKNOWN,
+    0x1A = .UNKNOWN,
+    0x1B = .UNKNOWN,
+    0x1C = .UNKNOWN,
+    0x1D = .UNKNOWN,
+    0x1E = .UNKNOWN,
+    0x1F = .UNKNOWN,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -163,6 +210,7 @@ opcode :: proc(num: u8, type: OpcodeType, address: u32) -> Opcode {
                 loc = #location(ext_ops)
                 type_s = "EXT"
         }
+        loc.line += i32(num) + 1 // Where the entry should be (if array filled til then)
         fmt.println()
         fmt.printfln("%s Unimplemented Opcode 0x%02x\n%x: %s:%d %02x", loc, num, address, type_s, num + offset, num)
         unimplemented()
