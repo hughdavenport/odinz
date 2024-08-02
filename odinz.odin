@@ -66,18 +66,19 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             break
         }
         if strings.has_prefix(args^[0], "--seed") || strings.has_prefix(args^[0], "-s") {
-            num: u64
+            seed: u64
             ok: bool
-            if _, _, num_s := strings.partition(args^[0], "="); num_s != "" {
-                num, ok = strconv.parse_u64(num_s)
+            if _, _, arg := strings.partition(args^[0], "="); arg != "" {
+                seed, ok = strconv.parse_u64(arg)
+                args^ = args^[1:]
             } else {
                 assert(len(args^) > 1)
-                num, ok = strconv.parse_u64(args^[1])
+                seed, ok = strconv.parse_u64(args^[1])
                 args^ = args^[2:]
             }
             assert(ok)
-            fmt.printfln("Setting random seed to %d", num)
-            rand.reset(num)
+            fmt.printfln("Setting random seed to %d", seed)
+            rand.reset(seed)
             continue
         }
         switch args^[0] {
