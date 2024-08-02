@@ -1,7 +1,9 @@
 package odinz
 
 import "core:fmt"
+import "core:math/rand"
 import "core:os"
+import "core:strconv"
 import "core:strings"
 
 @(private="file")
@@ -17,15 +19,16 @@ EXIT_CODE :: enum int {
 usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintfln("Usage: %s [OPTIONS] [--] romfile [OPTIONS]", progname)
     fmt.eprintln("OPTIONS:")
-    fmt.eprintln("    -t|--trace[=all]           Enable all traces listed below")
-    fmt.eprintln("    -tf|--trace=frame          Enable tracing of frame before each instruction")
-    fmt.eprintln("    -tb|--trace=backtrace      Enable tracing of machine backtrace before each instruction")
-    fmt.eprintln("    -ti|--trace=instruction    Enable tracing of each instruction")
-    fmt.eprintln("    -tr|--trace=read           Enable tracing of all reads")
-    fmt.eprintln("    -tw|--trace=write          Enable tracing of all writes")
-    fmt.eprintln("    -sl|--status-line          Enable status line (V1-3)")
-    fmt.eprintln("    -ss|--screen-split         Enable screen splitting (V1-3)")
-    fmt.eprintln("    -as|--alternate-screen     Enable alternate screen")
+    fmt.eprintln("    -t|--trace[=all]               Enable all traces listed below")
+    fmt.eprintln("    -tf|--trace=frame              Enable tracing of frame before each instruction")
+    fmt.eprintln("    -tb|--trace=backtrace          Enable tracing of machine backtrace before each instruction")
+    fmt.eprintln("    -ti|--trace=instruction        Enable tracing of each instruction")
+    fmt.eprintln("    -tr|--trace=read               Enable tracing of all reads")
+    fmt.eprintln("    -tw|--trace=write              Enable tracing of all writes")
+    fmt.eprintln("    -sl|--status-line              Enable status line (V1-3)")
+    fmt.eprintln("    -ss|--screen-split             Enable screen splitting (V1-3)")
+    fmt.eprintln("    -as|--alternate-screen         Enable alternate screen")
+    fmt.eprintln("    -s[=num]|--seed[=num] [num]    Set random number initial seed")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -60,6 +63,21 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
         if args^[0] == "--" {
             args^ = args^[1:]
             break
+        }
+        if strings.has_prefix(args^[0], "--seed") || strings.has_prefix(args^[0], "-s") {
+            num: u64
+            ok: bool
+            if _, _, num_s := strings.partition(args^[0], "="); num_s != "" {
+                num, ok = strconv.parse_u64(num_s)
+            } else {
+                assert(len(args^) > 1)
+                num, ok = strconv.parse_u64(args^[1])
+                args^ = args^[2:]
+            }
+            assert(ok)
+            debug("Setting random seed to %d", num)
+            rand.reset(num)
+            continue
         }
         switch args^[0] {
             case "-t", "--trace", "--trace=all": config.trace = ~{}
