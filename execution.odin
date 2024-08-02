@@ -444,7 +444,7 @@ execute :: proc(machine: ^Machine) {
 
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
-                os.exit(0)
+                return
 
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
