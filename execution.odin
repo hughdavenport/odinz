@@ -231,7 +231,12 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 1)
                 assert(instruction.has_store)
                 address := machine_read_operand(machine, &instruction.operands[0])
-                if address == 0 do unimplemented("return 0")
+                if address == 0 { // Return false
+                    pop(&machine.frames)
+                    if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), 0)
+                    delete_frame(current_frame)
+                    continue
+                }
                 len := object_get_property_len(machine, address)
                 machine_write_variable(machine, u16(instruction.store), len)
 
