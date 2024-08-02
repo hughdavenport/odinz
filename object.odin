@@ -101,6 +101,22 @@ object_get_property_len :: proc(machine: ^Machine, property_address: u16) -> u16
     }
 }
 
+object_next_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
+    header := machine_header(machine)
+    property_address := object_get_property_addr(machine, object_number, property_number)
+    if header.version <= 3 {
+        if property_address == 0 do return 0
+        size := machine_read_byte(machine, u32(property_address) - 1)
+        length := size >> 5 + 1
+        size = machine_read_byte(machine, u32(property_address) + u32(length) - 1)
+        if size == 0 do return 0
+        prop_num := size & 0b11111
+        return u16(prop_num)
+    } else {
+        unimplemented("V4+ property tables")
+    }
+}
+
 object_get_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
     header := machine_header(machine)
     addr := object_get_property_addr(machine, object_number, property_number)

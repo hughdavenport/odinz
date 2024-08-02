@@ -186,6 +186,16 @@ execute :: proc(machine: ^Machine) {
                 machine_write_variable(machine, u16(instruction.store), child)
                 jump_condition = child != 0
 
+            case .GET_NEXT_PROP:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_next_prop
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                property := machine_read_operand(machine, &instruction.operands[1])
+                assert(object != 0)
+                next := object_next_property(machine, object, property)
+                machine_write_variable(machine, u16(instruction.store), next)
+
             case .GET_PARENT:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_parent
                 assert(len(instruction.operands) == 1)
