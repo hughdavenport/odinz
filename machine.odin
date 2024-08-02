@@ -204,4 +204,8 @@ initialise_machine :: proc(machine: ^Machine) {
         fmt.print("\e[?1049h")
         libc.atexit(proc "c" () {libc.fprintf(libc.stdout, "\e[?1049l")})
     }
+    if !is_tty() do return
+    x, y := get_cursor()
+    clear_screen()
+    set_cursor(x, y)
 }
