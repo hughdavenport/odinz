@@ -8,6 +8,13 @@ OBJECT_PARENT_V3 :: 4
 OBJECT_SIBLING_V3 :: 5
 @(private="file")
 OBJECT_CHILD_V3 :: 6
+@(private="file")
+OBJECT_PROPERTIES_V3 :: 7
+@(private="file")
+OBJECT_ATTRIBUTES_V3 :: 32
+@(private="file")
+OBJECT_MAX_V3 :: 255
+
 
 @(private="file")
 OBJECT_PARENT_V4 :: 6
@@ -15,12 +22,20 @@ OBJECT_PARENT_V4 :: 6
 OBJECT_SIBLING_V4 :: 8
 @(private="file")
 OBJECT_CHILD_V4 :: 10
+@(private="file")
+OBJECT_PROPERTIES_V4 :: 12
+@(private="file")
+OBJECT_ATTRIBUTES_V4 :: 48
+@(private="file")
+OBJECT_MAX_V4 :: 65535
+
 
 @(private="file")
 object_addr :: proc(machine: ^Machine, object_number: u16) -> u16 {
     assert(object_number != 0)
     header := machine_header(machine)
-    if header.version <= 3 do assert(object_number < 256)
+    if header.version <= 3 do assert(object_number <= OBJECT_MAX_V3)
+    else do assert(object_number <= OBJECT_MAX_V4)
     objects_table := u16(header.objects)
     if header.version <= 3 do return objects_table + 2 * 31 + 9 * (object_number - 1)
     else do return objects_table + 2 * 63 + 14 * (object_number - 1)
@@ -29,8 +44,8 @@ object_addr :: proc(machine: ^Machine, object_number: u16) -> u16 {
 object_properties :: proc(machine: ^Machine, object_number: u16) -> u16 {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
-    if header.version <= 3 do return machine_read_word(machine, u32(addr) + 7)
-    else do return machine_read_word(machine, u32(addr) + 12)
+    if header.version <= 3 do return machine_read_word(machine, u32(addr) + OBJECT_PROPERTIES_V3)
+    else do return machine_read_word(machine, u32(addr) + OBJECT_PROPERTIES_V3)
 }
 
 object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
@@ -51,8 +66,8 @@ object_name :: proc(machine: ^Machine, object_number: u16) -> string {
 object_clear_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
-    if header.version <= 3 do assert(attribute <= 32)
-    else do assert(attribute <= 48)
+    if header.version <= 3 do assert(attribute <= OBJECT_ATTRIBUTES_V3)
+    else do assert(attribute <= OBJECT_ATTRIBUTES_V4)
 
     attribute_addr := u32(addr + (attribute / 8))
     mask := u8(1 << (7 - (attribute % 8)))
@@ -63,8 +78,8 @@ object_clear_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16)
 object_set_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
-    if header.version <= 3 do assert(attribute <= 32)
-    else do assert(attribute <= 48)
+    if header.version <= 3 do assert(attribute <= OBJECT_ATTRIBUTES_V3)
+    else do assert(attribute <= OBJECT_ATTRIBUTES_V4)
 
     attribute_addr := u32(addr + (attribute / 8))
     mask := u8(1 << (7 - (attribute % 8)))
@@ -75,8 +90,8 @@ object_set_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) {
 object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) -> bool {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
-    if header.version <= 3 do assert(attribute <= 32)
-    else do assert(attribute <= 48)
+    if header.version <= 3 do assert(attribute <= OBJECT_ATTRIBUTES_V3)
+    else do assert(attribute <= OBJECT_ATTRIBUTES_V4)
 
     mask := u8(1 << (7 - (attribute % 8)))
     return machine_read_byte(machine, u32(addr + (attribute / 8))) & mask == mask
@@ -187,8 +202,8 @@ object_set_child :: proc(machine: ^Machine, object_number: u16, child: u16) {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
-        assert(child <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
+        assert(child <= OBJECT_MAX_V3)
         machine_write_byte(machine, u32(obj + OBJECT_CHILD_V3), u8(child))
     } else {
         machine_write_word(machine, u32(obj + OBJECT_CHILD_V4), child)
@@ -200,7 +215,7 @@ object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
         return u16(machine_read_byte(machine, u32(obj + OBJECT_CHILD_V3)))
     } else {
         return machine_read_word(machine, u32(obj + OBJECT_CHILD_V4))
@@ -214,8 +229,8 @@ object_set_sibling :: proc(machine: ^Machine, object_number: u16, sibling: u16) 
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
-        assert(sibling <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
+        assert(sibling <= OBJECT_MAX_V3)
         machine_write_byte(machine, u32(obj + OBJECT_SIBLING_V3), u8(sibling))
     } else {
         machine_write_word(machine, u32(obj + OBJECT_SIBLING_V4), sibling)
@@ -227,7 +242,7 @@ object_sibling :: proc(machine: ^Machine, object_number: u16) -> u16 {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
         return u16(machine_read_byte(machine, u32(obj + OBJECT_SIBLING_V3)))
     } else {
         return machine_read_word(machine, u32(obj + OBJECT_SIBLING_V4))
@@ -241,8 +256,8 @@ object_set_parent :: proc(machine: ^Machine, object_number: u16, parent: u16) {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
-        assert(parent <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
+        assert(parent <= OBJECT_MAX_V3)
         machine_write_byte(machine, u32(obj + OBJECT_PARENT_V3), u8(parent))
     } else {
         machine_write_word(machine, u32(obj + OBJECT_PARENT_V4), parent)
@@ -254,7 +269,7 @@ object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
         return u16(machine_read_byte(machine, u32(obj + OBJECT_PARENT_V3)))
     } else {
         return machine_read_word(machine, u32(obj + OBJECT_PARENT_V4))
@@ -267,7 +282,7 @@ object_remove_object :: proc(machine: ^Machine, object_number: u16) {
     header := machine_header(machine)
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
-        assert(object_number <= 255)
+        assert(object_number <= OBJECT_MAX_V3)
         machine_write_byte(machine, u32(obj + OBJECT_PARENT_V3), 0)
     } else {
         machine_write_word(machine, u32(obj + OBJECT_PARENT_V4), 0)
