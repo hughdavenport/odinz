@@ -3,14 +3,52 @@ package odinz
 import "core:fmt"
 import "core:math/rand"
 import "core:os"
+import "core:strings"
 import "core:time"
 
 status_line :: proc(machine: ^Machine) {
     // https://zspec.jaredreisinger.com/08-screen#8_2
     header := machine_header(machine)
-    if .status_unavail in transmute(Flags1_V3)header.flags1 do return
-    fmt.println()
-    unimplemented("status line")
+    if !is_tty() do return
+    flags := transmute(Flags1_V3)header.flags1
+    if .status_unavail in flags do return
+
+    x, y := get_cursor()
+    defer set_cursor(x, y)
+    reverse_graphics()
+    defer reset_graphics()
+    set_cursor(0, 0)
+    clear_line()
+
+    // Get room name, truncating if needed
+    name := object_name(machine, machine_read_global(machine, 0))
+    if len(name) >= int(machine.screen.width) {
+        split_at := strings.last_index(name[:machine.screen.width - 3], " ")
+        if split_at == -1 do split_at = int(machine.screen.width) - 3
+        name = fmt.tprintf("%s...", name[:split_at])
+    }
+
+    status: string
+    if .status_time in flags {
+        hour := machine_read_global(machine, 1)
+        min := machine_read_global(machine, 2)
+        status = fmt.tprintf("Time: %02d:%02d ", hour, min)
+    } else {
+        score := machine_read_global(machine, 1)
+        turns := machine_read_global(machine, 2)
+        status = fmt.tprintf("Score: %- 3d  Moves: %- 4d ", score, turns)
+    }
+    if len(name) + 6 + len(status) >= int(machine.screen.width) {
+        gap := machine.screen.width - len(name) - 1
+        fmt.printf(" %s", name)
+        for i in 0..<gap do fmt.print(" ") // For some reason %*s doesn't work
+        // No space for status part of string
+    } else {
+        gap := machine.screen.width - len(name) - len(status) - 2
+        fmt.printf(" %s", name)
+        for i in 0..<gap do fmt.print(" ") // For some reason %*s doesn't work
+        fmt.printf("%s ", status)
+    }
 }
 
 read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {

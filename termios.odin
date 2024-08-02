@@ -12,10 +12,10 @@ package odinz
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import "core:c"
-import "core:fmt"
 import "core:os"
 foreign import libc "system:c"
 
+// -- termios --
 cc_t :: distinct c.uchar
 speed_t :: distinct c.uint
 tcflag_t :: distinct c.uint
@@ -39,10 +39,20 @@ ECHO: tcflag_t : 0000010
 
 TCSANOW :: 0
 
+// -- ioctl --
+winsize :: struct {
+	ws_row: c.ushort,
+	ws_col: c.ushort,
+	ws_xpixel: c.ushort,
+	ws_ypixel: c.ushort,
+}
+
+TIOCGWINSZ :: 21523
+
 foreign libc {
-    @(link_name="tcgetattr") _unix_tcgetattr :: proc(fd: os.Handle, termios_p: ^termios) -> c.int ---;
-    @(link_name="tcsetattr") _unix_tcsetattr :: proc(fd: os.Handle, optional_actions: c.int, termios_p: ^termios) -> c.int ---;
-    @(link_name="ioctl") _unix_ioctl :: proc(fd: os.Handle, request: c.ulong, argp: rawptr) -> c.int ---;
+    @(link_name="tcgetattr") _unix_tcgetattr :: proc(fd: os.Handle, termios_p: ^termios) -> c.int ---
+    @(link_name="tcsetattr") _unix_tcsetattr :: proc(fd: os.Handle, optional_actions: c.int, termios_p: ^termios) -> c.int ---
+    @(link_name="ioctl") _unix_ioctl :: proc(fd: os.Handle, request: c.ulong, argp: rawptr) -> c.int ---
 }
 
 tcgetattr :: proc(fd: os.Handle, termios_p: ^termios) -> os.Errno {
@@ -63,6 +73,15 @@ tcsetattr :: proc(fd: os.Handle, optional_actions: int, termios_p: ^termios) -> 
 	return os.ERROR_NONE
 }
 
+ioctl :: proc(fd: os.Handle, request: u64, argp: rawptr) -> (int, os.Errno) {
+	result := _unix_ioctl(fd, c.ulong(request), argp);
+	if result == -1 {
+		return -1, os.Errno(os.get_last_error());
+	}
+
+	return int(result), os.ERROR_NONE
+}
+
 is_tty :: proc() -> bool {
 	term: termios
 	if get_error := tcgetattr(os.stdin, &term); get_error != os.ERROR_NONE {
@@ -75,7 +94,7 @@ getch :: proc() -> u8 {
     data: [1]byte
 	prev: termios
 	if get_error := tcgetattr(os.stdin, &prev); get_error != os.ERROR_NONE {
-		unreachable("Error getting terminal info: %s\n", get_error)
+		unreachable("Error getting terminal info: %d\n", get_error)
 	}
 
     new := prev
@@ -86,7 +105,7 @@ getch :: proc() -> u8 {
 	new.c_cc[VTIME] = 0
 
 	if set_error := tcsetattr(os.stdin, TCSANOW, &new); set_error != os.ERROR_NONE {
-		unreachable("Error setting terminal info: %s\n", set_error)
+		unreachable("Error setting terminal info: %d\n", set_error)
 	}
 
 	if bytes_read, _ := os.read(os.stdin, data[:]); bytes_read < 0 {
@@ -94,41 +113,24 @@ getch :: proc() -> u8 {
 	}
 
 	if set_error := tcsetattr(os.stdin, TCSANOW, &prev); set_error != os.ERROR_NONE {
-		unreachable("Error setting terminal info: %s\n", set_error)
+		unreachable("Error setting terminal info: %d\n", set_error)
 	}
 
 	return data[0]
 }
 
-get_cursor :: proc() -> (x: uint, y: uint) {
+get_term_size :: proc() -> (width: uint, height: uint) {
     assert(is_tty())
-    fmt.print("\e[6n")
-    assert(getch() == '\e')
-    assert(getch() == '[')
-    for b := getch(); b != ';'; b = getch() {
-        x *= 10
-        x += uint(b - '0')
+	w: winsize
+	if _, err := ioctl(os.stdout, TIOCGWINSZ, &w); err != os.ERROR_NONE {
+        tty: os.Handle
+        if tty, err2 := os.open("/dev/tty", os.O_RDWR); err2 != os.ERROR_NONE {
+            unreachable("Error getting terminal size: %d %d\n", err, err2)
+        }
+        if _, err2 := ioctl(tty, TIOCGWINSZ, &w); err2 != os.ERROR_NONE {
+            unreachable("Error getting terminal size: %d %d\n", err, err2)
+        }
     }
-    if x == 0 do x = 1
-    for b := getch(); b != 'R'; b = getch() {
-        y *= 10
-        y += uint(b - '0')
-    }
-    if y == 0 do y = 1
-    return x, y
-}
 
-set_cursor :: proc(x: uint, y: uint) {
-    assert(is_tty())
-    fmt.printf("\e[%d;%dH", x, y)
-}
-
-clear_line :: proc() {
-    assert(is_tty())
-    fmt.print("\e[2K")
-}
-
-clear_screen :: proc() {
-    assert(is_tty())
-    fmt.print("\e[2J")
+	return uint(w.ws_col), uint(w.ws_row)
 }

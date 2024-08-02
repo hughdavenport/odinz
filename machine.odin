@@ -20,9 +20,16 @@ Config :: struct {
     alternate_screen: bool,
 }
 
+Screen :: struct {
+    tty: bool,
+    width: uint,
+    height: uint,
+}
+
 Machine :: struct {
     romfile: string,
     config: Config,
+    screen: Screen,
     memory: []u8,
     frames: [dynamic]Frame,
 }
@@ -205,7 +212,10 @@ initialise_machine :: proc(machine: ^Machine) {
         libc.atexit(proc "c" () {libc.fprintf(libc.stdout, "\e[?1049l")})
     }
     if !is_tty() do return
-    x, y := get_cursor()
+    // FIXME handle signals to detect change in size
+    fmt.printfln("tty = %v", is_tty())
+    machine.screen.width, machine.screen.height = get_term_size()
+    fmt.printfln("width = %d, height = %d", machine.screen.width, machine.screen.height)
     clear_screen()
-    set_cursor(x, y)
+    set_cursor(0, machine.screen.height - 1)
 }

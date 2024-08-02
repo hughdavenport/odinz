@@ -23,7 +23,7 @@ Header :: struct {
 
 Flags1_V3 :: bit_set[enum {
     _unused1,
-    status,
+    status_time,
     split,
     tandy,          // Appendix B of standard 1.1 defines this
     status_unavail,
@@ -67,14 +67,14 @@ header_flags1_print :: proc(header: ^Header) {
         // No flags in these versions. Implicit break in Odin
     case 3:
         flags := transmute(Flags1_V3)header.flags1
-        if .status in flags {
-            fmt.print("Display scores/moves")
-        } else {
+        if .status_time in flags {
             fmt.print("Display hours:minutes")
+        } else {
+            fmt.print("Display scores/moves")
         }
         if .split in flags do fmt.print(", Split over two discs")
         if .tandy in flags do fmt.print(", Tandy-bit set")
-        if rest := flags - {.status, .split, .tandy}; rest != {} {
+        if rest := flags - {.status_time, .split, .tandy}; rest != {} {
             fmt.printf(", and also these: %w", rest)
         }
 
