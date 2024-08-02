@@ -213,9 +213,7 @@ initialise_machine :: proc(machine: ^Machine) {
     }
     if !is_tty() do return
     // FIXME handle signals to detect change in size
-    fmt.printfln("tty = %v", is_tty())
     machine.screen.width, machine.screen.height = get_term_size()
-    fmt.printfln("width = %d, height = %d", machine.screen.width, machine.screen.height)
     clear_screen()
     set_cursor(0, machine.screen.height - 1)
 }
