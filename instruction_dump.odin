@@ -134,6 +134,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .DEC_CHK,
              .INC,
              .INC_CHK,
+             .LOAD,
              .STORE:
             assert(len(instruction.operands) >= 1)
             if instruction.operands[0].type == .VARIABLE do fmt.print("[")

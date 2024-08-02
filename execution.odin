@@ -341,6 +341,14 @@ execute :: proc(machine: ^Machine) {
                 a := machine_read_operand(machine, &instruction.operands[0])
                 jump_condition = a == 0
 
+            case .LOAD:
+                // https://zspec.jaredreisinger.com/15-opcodes#load
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                value := machine_read_variable(machine, variable)
+                machine_write_variable(machine, u16(instruction.store), value)
+
             case .LOADB:
                 // https://zspec.jaredreisinger.com/15-opcodes#loadb
                 assert(len(instruction.operands) == 2)
