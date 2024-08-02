@@ -29,6 +29,7 @@ usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintln("    -ss|--screen-split             Enable screen splitting (V1-3)")
     fmt.eprintln("    -as|--alternate-screen         Enable alternate screen")
     fmt.eprintln("    -s[=num]|--seed[=num] [num]    Set random number initial seed")
+    fmt.eprintln("    -ps|--print-seed               Print the random number seed used")
     os.exit(int(EXIT_CODE.usage))
 }
 
@@ -89,6 +90,10 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             case "-sl", "--status-line": config.status = true
             case "-ss", "--screen-split": config.screen_split = true
             case "-as", "--alternative-screen": config.alternate_screen = true
+            case "-ps", "--print-seed":
+                seed := rand.uint64()
+                fmt.printfln("Random seet is %d", seed)
+                rand.reset(seed)
             case: usage_and_exit(progname)
         }
         args^ = args^[1:]
