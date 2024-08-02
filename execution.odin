@@ -375,6 +375,12 @@ execute :: proc(machine: ^Machine) {
                 assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
 
+            case .PRINT_ADDR:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_addr
+                assert(len(instruction.operands) == 1)
+                addr := machine_read_operand(machine, &instruction.operands[0])
+                zstring_dump(machine, u32(addr))
+
             case .PRINT_CHAR:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_char
                 assert(len(instruction.operands) == 1)
