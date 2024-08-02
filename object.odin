@@ -3,6 +3,20 @@ package odinz
 import "core:fmt"
 
 @(private="file")
+OBJECT_PARENT_V3 :: 4
+@(private="file")
+OBJECT_SIBLING_V3 :: 5
+@(private="file")
+OBJECT_CHILD_V3 :: 6
+
+@(private="file")
+OBJECT_PARENT_V4 :: 6
+@(private="file")
+OBJECT_SIBLING_V4 :: 8
+@(private="file")
+OBJECT_CHILD_V4 :: 10
+
+@(private="file")
 object_addr :: proc(machine: ^Machine, object_number: u16) -> u16 {
     assert(object_number != 0)
     header := machine_header(machine)
@@ -175,9 +189,9 @@ object_set_child :: proc(machine: ^Machine, object_number: u16, child: u16) {
     if header.version <= 3 {
         assert(object_number <= 255)
         assert(child <= 255)
-        machine_write_byte(machine, u32(obj + 6), u8(child))
+        machine_write_byte(machine, u32(obj + OBJECT_CHILD_V3), u8(child))
     } else {
-        machine_write_word(machine, u32(obj + 10), child)
+        machine_write_word(machine, u32(obj + OBJECT_CHILD_V4), child)
     }
 }
 
@@ -187,9 +201,9 @@ object_child :: proc(machine: ^Machine, object_number: u16) -> u16 {
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
         assert(object_number <= 255)
-        return u16(machine_read_byte(machine, u32(obj + 6)))
+        return u16(machine_read_byte(machine, u32(obj + OBJECT_CHILD_V3)))
     } else {
-        return machine_read_word(machine, u32(obj + 10))
+        return machine_read_word(machine, u32(obj + OBJECT_CHILD_V4))
     }
     unreachable()
 }
@@ -202,9 +216,9 @@ object_set_sibling :: proc(machine: ^Machine, object_number: u16, sibling: u16) 
     if header.version <= 3 {
         assert(object_number <= 255)
         assert(sibling <= 255)
-        machine_write_byte(machine, u32(obj + 5), u8(sibling))
+        machine_write_byte(machine, u32(obj + OBJECT_SIBLING_V3), u8(sibling))
     } else {
-        machine_write_word(machine, u32(obj + 8), sibling)
+        machine_write_word(machine, u32(obj + OBJECT_SIBLING_V4), sibling)
     }
 }
 
@@ -214,9 +228,9 @@ object_sibling :: proc(machine: ^Machine, object_number: u16) -> u16 {
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
         assert(object_number <= 255)
-        return u16(machine_read_byte(machine, u32(obj + 5)))
+        return u16(machine_read_byte(machine, u32(obj + OBJECT_SIBLING_V3)))
     } else {
-        return machine_read_word(machine, u32(obj + 8))
+        return machine_read_word(machine, u32(obj + OBJECT_SIBLING_V4))
     }
     unreachable()
 }
@@ -229,9 +243,9 @@ object_set_parent :: proc(machine: ^Machine, object_number: u16, parent: u16) {
     if header.version <= 3 {
         assert(object_number <= 255)
         assert(parent <= 255)
-        machine_write_byte(machine, u32(obj + 4), u8(parent))
+        machine_write_byte(machine, u32(obj + OBJECT_PARENT_V3), u8(parent))
     } else {
-        machine_write_word(machine, u32(obj + 6), parent)
+        machine_write_word(machine, u32(obj + OBJECT_PARENT_V4), parent)
     }
 }
 
@@ -241,9 +255,9 @@ object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
         assert(object_number <= 255)
-        return u16(machine_read_byte(machine, u32(obj + 4)))
+        return u16(machine_read_byte(machine, u32(obj + OBJECT_PARENT_V3)))
     } else {
-        return machine_read_word(machine, u32(obj + 6))
+        return machine_read_word(machine, u32(obj + OBJECT_PARENT_V4))
     }
     unreachable()
 }
@@ -254,9 +268,9 @@ object_remove_object :: proc(machine: ^Machine, object_number: u16) {
     obj := object_addr(machine, object_number)
     if header.version <= 3 {
         assert(object_number <= 255)
-        machine_write_byte(machine, u32(obj + 4), 0)
+        machine_write_byte(machine, u32(obj + OBJECT_PARENT_V3), 0)
     } else {
-        machine_write_word(machine, u32(obj + 6), 0)
+        machine_write_word(machine, u32(obj + OBJECT_PARENT_V4), 0)
     }
 }
 

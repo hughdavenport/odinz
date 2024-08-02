@@ -75,7 +75,7 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
                 args^ = args^[2:]
             }
             assert(ok)
-            debug("Setting random seed to %d", num)
+            fmt.printfln("Setting random seed to %d", num)
             rand.reset(num)
             continue
         }
