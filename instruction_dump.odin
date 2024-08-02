@@ -128,7 +128,8 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
             if len(instruction.operands) >= 2 do fmt.print(",")
             operands_dump(instruction.operands[1:])
 
-        case .DEC_CHK,
+        case .DEC,
+             .DEC_CHK,
              .INC,
              .INC_CHK:
             assert(len(instruction.operands) >= 1)

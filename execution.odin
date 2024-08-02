@@ -156,6 +156,14 @@ execute :: proc(machine: ^Machine) {
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 object_clear_attr(machine, object, attribute)
 
+            case .DEC:
+                // https://zspec.jaredreisinger.com/15-opcodes#dec
+                assert(len(instruction.operands) == 1)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                x := i16(machine_read_variable(machine, variable))
+                x -= 1
+                machine_write_variable(machine, variable, u16(x))
+
             case .DEC_CHK:
                 // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
                 assert(len(instruction.operands) == 2)
