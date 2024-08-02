@@ -65,23 +65,26 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             args^ = args^[1:]
             break
         }
-        if strings.has_prefix(args^[0], "--seed") || strings.has_prefix(args^[0], "-s") {
+        arg := args^[0]
+        args^ = args^[1:]
+        if strings.has_prefix(arg, "--seed") ||
+                strings.has_prefix(arg, "-s=") ||
+                arg == "-s" {
             seed: u64
             ok: bool
-            if _, _, arg := strings.partition(args^[0], "="); arg != "" {
+            if _, _, arg = strings.partition(arg, "="); arg != "" {
                 seed, ok = strconv.parse_u64(arg)
-                args^ = args^[1:]
             } else {
-                assert(len(args^) > 1)
-                seed, ok = strconv.parse_u64(args^[1])
-                args^ = args^[2:]
+                assert(len(args^) > 0)
+                seed, ok = strconv.parse_u64(args^[0])
+                args^ = args^[1:]
             }
             assert(ok)
             fmt.printfln("Setting random seed to %d", seed)
             rand.reset(seed)
             continue
         }
-        switch args^[0] {
+        switch arg {
             case "-t", "--trace", "--trace=all": config.trace = ~{}
             case "-tb", "--trace=backtrace": config.trace |= {.backtrace}
             case "-tf", "--trace=frame": config.trace |= {.frame}
@@ -97,7 +100,6 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
                 rand.reset(seed)
             case: usage_and_exit(progname)
         }
-        args^ = args^[1:]
     }
     return config
 }
