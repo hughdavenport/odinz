@@ -133,9 +133,12 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
         case .DEC,
              .DEC_CHK,
              .INC,
-             .INC_CHK:
+             .INC_CHK,
+             .STORE:
             assert(len(instruction.operands) >= 1)
+            if instruction.operands[0].type == .VARIABLE do fmt.print("[")
             variable_dump(instruction.operands[0].value)
+            if instruction.operands[0].type == .VARIABLE do fmt.print("]")
             if len(instruction.operands) >= 2 do fmt.print(",")
             operands_dump(instruction.operands[1:])
 
@@ -147,6 +150,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .JUMP:
             assert(len(instruction.operands) == 1)
+            // This could cause issues if JUMP SP, as would alter the stack for the dump
+            // However, this does not show up in Zork 1 (840726)
+            assert(!(instruction.operands[0].type == .VARIABLE && instruction.operands[0].value == 0))
             offset := i16(machine_read_operand(machine, &instruction.operands[0]))
             switch offset {
                 case 0: fmt.print("RFALSE")
@@ -165,8 +171,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
                 assert(instruction.has_store)
                 unimplemented()
             } else {
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                variable_dump(variable, store=true)
+                if instruction.operands[0].type == .VARIABLE do fmt.print("[")
+                variable_dump(instruction.operands[0].value)
+                if instruction.operands[0].type == .VARIABLE do fmt.print("]")
             }
 
         case .PRINT, .PRINT_RET:
@@ -174,13 +181,6 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
         case .PRINT_OBJ:
             _object_dump(machine, instruction.operands[0])
-
-        case .STORE:
-            assert(len(instruction.operands) == 2)
-            variable := instruction.operands[0].value
-            variable_dump(variable)
-            fmt.print(",")
-            operand_dump(instruction.operands[1])
     }
 
     if instruction.has_store {
