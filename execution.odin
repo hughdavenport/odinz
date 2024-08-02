@@ -454,7 +454,7 @@ execute :: proc(machine: ^Machine) {
                 ret := u16(0)
                 if range < 0 do rand.reset(u64(abs(range)))
                 else if range == 0 do rand.reset(u64(time.time_to_unix_nano(time.now())))
-                else do ret = (u16(rand.uint32()) % (u16(range) + 1)) + 1
+                else do ret = (u16(rand.uint32()) % u16(range)) + 1
                 machine_write_variable(machine, u16(instruction.store), ret)
 
             case .QUIT:
