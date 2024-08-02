@@ -248,6 +248,18 @@ object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
     unreachable()
 }
 
+object_remove_object :: proc(machine: ^Machine, object_number: u16) {
+    assert(object_number != 0)
+    header := machine_header(machine)
+    obj := object_addr(machine, object_number)
+    if header.version <= 3 {
+        assert(object_number <= 255)
+        machine_write_byte(machine, u32(obj + 4), 0)
+    } else {
+        machine_write_word(machine, u32(obj + 6), 0)
+    }
+}
+
 object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_number: u16) {
     assert(object_number != 0)
     assert(destination_number != 0)

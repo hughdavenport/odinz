@@ -122,6 +122,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .GET_SIBLING,
              .INSERT_OBJ,
              .PUT_PROP,
+             .REMOVE_OBJ,
              .SET_ATTR,
              .TEST_ATTR:
             assert(len(instruction.operands) >= 1)

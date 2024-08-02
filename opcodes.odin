@@ -53,6 +53,7 @@ Opcode :: enum {
     PUSH,
     PUT_PROP,
     RANDOM,
+    REMOVE_OBJ,
     QUIT,
     READ,
     RET,
@@ -135,7 +136,7 @@ one_ops := [?]Opcode{
     0x06 = .DEC,
     0x07 = .PRINT_ADDR,
     0x08 = .UNKNOWN,
-    0x09 = .UNKNOWN,
+    0x09 = .REMOVE_OBJ,
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
     0x0C = .JUMP,
@@ -244,7 +245,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST_ATTR: return true
 
         // Instruction does not need to branch
-        case .ADD, .AND, .CALL, .CLEAR_ATTR, .DEC, .DIV, .GET_NEXT_PROP, .GET_PARENT, .GET_PROP, .GET_PROP_ADDR, .GET_PROP_LEN, .INC, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .MUL, .NEW_LINE, .PRINT, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PRINT_RET, .PULL, .PUSH, .PUT_PROP, .RANDOM, .QUIT, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .SUB:
+        case .ADD, .AND, .CALL, .CLEAR_ATTR, .DEC, .DIV, .GET_NEXT_PROP, .GET_PARENT, .GET_PROP, .GET_PROP_ADDR, .GET_PROP_LEN, .INC, .INSERT_OBJ, .LOADB, .LOADW, .JUMP, .MUL, .NEW_LINE, .PRINT, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PRINT_RET, .PULL, .PUSH, .PUT_PROP, .RANDOM, .REMOVE_OBJ, .QUIT, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .SUB:
     }
     return false
 }
@@ -274,7 +275,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .READ: if header.version >= 5 do return true
 
         // Instruction does not need to store
-        case .CLEAR_ATTR, .DEC, .DEC_CHK, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PRINT_RET, .PUSH, .PUT_PROP, .QUIT, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .TEST, .TEST_ATTR:
+        case .CLEAR_ATTR, .DEC, .DEC_CHK, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .NEW_LINE, .PRINT, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PRINT_RET, .PUSH, .PUT_PROP, .REMOVE_OBJ, .QUIT, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .TEST, .TEST_ATTR:
     }
     return false
 }
@@ -285,7 +286,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PRINT, .PRINT_RET: return true
 
         // Instruction does not need a zstring
-        case .ADD, .AND, .CALL, .CLEAR_ATTR, .DEC, .DEC_CHK, .DIV, .GET_CHILD, .GET_NEXT_PROP, .GET_PARENT, .GET_PROP, .GET_PROP_ADDR, .GET_PROP_LEN, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .MUL, .NEW_LINE, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RANDOM, .QUIT, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .SUB, .TEST, .TEST_ATTR:
+        case .ADD, .AND, .CALL, .CLEAR_ATTR, .DEC, .DEC_CHK, .DIV, .GET_CHILD, .GET_NEXT_PROP, .GET_PARENT, .GET_PROP, .GET_PROP_ADDR, .GET_PROP_LEN, .GET_SIBLING, .INC, .INC_CHK, .INSERT_OBJ, .JE, .JG, .JIN, .JL, .JUMP, .JZ, .LOADB, .LOADW, .MUL, .NEW_LINE, .PRINT_ADDR, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_PADDR, .PULL, .PUSH, .PUT_PROP, .RANDOM, .REMOVE_OBJ, .QUIT, .READ, .RET_POPPED, .RET, .RFALSE, .RTRUE, .SET_ATTR, .STORE, .STOREB, .STOREW, .SUB, .TEST, .TEST_ATTR:
     }
     return false
 }

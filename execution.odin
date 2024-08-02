@@ -471,6 +471,13 @@ execute :: proc(machine: ^Machine) {
                 else do ret = (u16(rand.uint32()) % u16(range)) + 1
                 machine_write_variable(machine, u16(instruction.store), ret)
 
+            case .REMOVE_OBJ:
+                // https://zspec.jaredreisinger.com/15-opcodes#remove_obj
+                assert(len(instruction.operands) == 1)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                object_remove_object(machine, object)
+
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
                 return
