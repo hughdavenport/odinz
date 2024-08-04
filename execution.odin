@@ -133,6 +133,30 @@ execute :: proc(machine: ^Machine) {
                 }
                 machine_write_variable(machine, u16(instruction.store), u16(value))
 
+            case .INC, .INC_CHK, .DEC, .DEC_CHK:
+                // https://zspec.jaredreisinger.com/15-opcodes#inc
+                // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
+                // https://zspec.jaredreisinger.com/15-opcodes#dec
+                // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
+                assert(len(instruction.operands) >= 1)
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                x := i16(machine_read_variable(machine, variable))
+                #partial switch instruction.opcode {
+                    case .INC, .INC_CHK: x += 1
+                    case .DEC, .DEC_CHK: x -= 1
+                    case: unreachable()
+                }
+                machine_write_variable(machine, variable, u16(x))
+                #partial switch instruction.opcode {
+                    case .INC, .DEC: // Ignore
+                    case .INC_CHK, .DEC_CHK:
+                        assert(len(instruction.operands) == 2)
+                        value := i16(machine_read_operand(machine, &instruction.operands[1]))
+                        if instruction.opcode == .INC_CHK do jump_condition = x > value
+                        else do jump_condition = x < value
+                    case: unreachable()
+                }
+
             case .AND:
                 // https://zspec.jaredreisinger.com/15-opcodes#and
                 assert(len(instruction.operands) == 2)
@@ -168,25 +192,6 @@ execute :: proc(machine: ^Machine) {
                 assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 object_clear_attr(machine, object, attribute)
-
-            case .DEC:
-                // https://zspec.jaredreisinger.com/15-opcodes#dec
-                assert(len(instruction.operands) == 1)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                x := i16(machine_read_variable(machine, variable))
-                x -= 1
-                machine_write_variable(machine, variable, u16(x))
-
-            case .DEC_CHK:
-                // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                value := i16(machine_read_operand(machine, &instruction.operands[1]))
-                x := i16(machine_read_variable(machine, variable))
-                x -= 1
-                machine_write_variable(machine, variable, u16(x))
-                jump_condition = x < value
 
             case .GET_CHILD:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_child
@@ -263,25 +268,6 @@ execute :: proc(machine: ^Machine) {
                 sibling := object_sibling(machine, object)
                 machine_write_variable(machine, u16(instruction.store), sibling)
                 jump_condition = sibling != 0
-
-            case .INC:
-                // https://zspec.jaredreisinger.com/15-opcodes#inc
-                assert(len(instruction.operands) == 1)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                x := machine_read_variable(machine, variable)
-                x += 1
-                machine_write_variable(machine, variable, x)
-
-            case .INC_CHK:
-                // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                value := i16(machine_read_operand(machine, &instruction.operands[1]))
-                x := i16(machine_read_variable(machine, variable))
-                x += 1
-                machine_write_variable(machine, variable, u16(x))
-                jump_condition = x > value
 
             case .INSERT_OBJ:
                 // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
