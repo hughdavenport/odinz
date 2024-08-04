@@ -165,6 +165,14 @@ execute :: proc(machine: ^Machine) {
                 b := u16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), a & b)
 
+            case .TEST:
+                // https://zspec.jaredreisinger.com/15-opcodes#test
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_branch)
+                bitmap := machine_read_operand(machine, &instruction.operands[0])
+                flags := machine_read_operand(machine, &instruction.operands[1])
+                jump_condition = bitmap & flags == flags
+
             case .CALL:
                 // https://zspec.jaredreisinger.com/15-opcodes#call
                 assert(len(instruction.operands) > 0)
@@ -526,14 +534,6 @@ execute :: proc(machine: ^Machine) {
                 index := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
                 machine_write_word(machine, u32(array + 2 * index), value)
-
-            case .TEST:
-                // https://zspec.jaredreisinger.com/15-opcodes#test
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                bitmap := machine_read_operand(machine, &instruction.operands[0])
-                flags := machine_read_operand(machine, &instruction.operands[1])
-                jump_condition = bitmap & flags == flags
 
             case .TEST_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#test_attr
