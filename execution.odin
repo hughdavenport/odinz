@@ -452,6 +452,20 @@ execute :: proc(machine: ^Machine) {
                 delete_frame(current_frame)
                 continue
 
+
+            // Input
+            case .READ:
+                // https://zspec.jaredreisinger.com/15-opcodes#read
+                read_opcode(machine, &instruction)
+
+
+            // Stack
+            case .PUSH:
+                // https://zspec.jaredreisinger.com/15-opcodes#push
+                assert(len(instruction.operands) == 1)
+                value := machine_read_operand(machine, &instruction.operands[0])
+                append(&current_frame.stack, value)
+
             case .PULL:
                 // https://zspec.jaredreisinger.com/15-opcodes#pull
                 assert(len(instruction.operands) == 1)
@@ -464,12 +478,17 @@ execute :: proc(machine: ^Machine) {
                     machine_write_variable(machine, variable, value)
                 }
 
-            case .PUSH:
-                // https://zspec.jaredreisinger.com/15-opcodes#push
-                assert(len(instruction.operands) == 1)
-                value := machine_read_operand(machine, &instruction.operands[0])
-                append(&current_frame.stack, value)
+            case .RET_POPPED:
+                // https://zspec.jaredreisinger.com/15-opcodes#ret_popped
+                assert(len(instruction.operands) == 0)
+                ret := machine_read_variable(machine, 0)
+                pop(&machine.frames)
+                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
+                delete_frame(current_frame)
+                continue
 
+
+            // Misc
             case .RANDOM:
                 // https://zspec.jaredreisinger.com/15-opcodes#random
                 assert(len(instruction.operands) == 1)
@@ -484,19 +503,6 @@ execute :: proc(machine: ^Machine) {
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
                 return
-
-            case .READ:
-                // https://zspec.jaredreisinger.com/15-opcodes#read
-                read_opcode(machine, &instruction)
-
-            case .RET_POPPED:
-                // https://zspec.jaredreisinger.com/15-opcodes#ret_popped
-                assert(len(instruction.operands) == 0)
-                ret := machine_read_variable(machine, 0)
-                pop(&machine.frames)
-                if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
-                delete_frame(current_frame)
-                continue
 
         } // switch instruction.opcode
 
