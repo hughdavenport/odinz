@@ -279,13 +279,19 @@ object_parent :: proc(machine: ^Machine, object_number: u16) -> u16 {
 
 object_remove_object :: proc(machine: ^Machine, object_number: u16) {
     assert(object_number != 0)
-    header := machine_header(machine)
-    obj := object_addr(machine, object_number)
-    if header.version <= 3 {
-        assert(object_number <= OBJECT_MAX_V3)
-        machine_write_byte(machine, u32(obj + OBJECT_PARENT_V3), 0)
+    sibling := object_sibling(machine, object_number)
+    defer object_set_sibling(machine, object_number, 0)
+    parent := object_parent(machine, object_number)
+    if parent == 0 do return
+    defer object_set_parent(machine, object_number, 0)
+
+    child := object_child(machine, parent)
+    if child == object_number {
+        object_set_child(machine, parent, sibling)
     } else {
-        machine_write_word(machine, u32(obj + OBJECT_PARENT_V4), 0)
+        for ; child != 0 && object_sibling(machine, child) != object_number ;
+              child = object_sibling(machine, child) {}
+        object_set_sibling(machine, child, sibling)
     }
 }
 
