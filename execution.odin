@@ -358,29 +358,50 @@ execute :: proc(machine: ^Machine) {
                 object_remove_object(machine, object)
 
 
-            case .LOAD:
+            // Loads and stores
+            case .LOAD, .LOADB, .LOADW:
                 // https://zspec.jaredreisinger.com/15-opcodes#load
-                assert(len(instruction.operands) == 1)
+                // https://zspec.jaredreisinger.com/15-opcodes#loadb
+                // https://zspec.jaredreisinger.com/15-opcodes#loadw
+                assert(len(instruction.operands) >= 1)
                 assert(instruction.has_store)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                value := machine_read_variable(machine, variable)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                value: u16
+                #partial switch instruction.opcode {
+                    case .LOAD: value = machine_read_variable(machine, a)
+                    case .LOADB:
+                        index := machine_read_operand(machine, &instruction.operands[1])
+                        value = u16(machine_read_byte(machine, u32(a + index)))
+                    case .LOADW:
+                        index := machine_read_operand(machine, &instruction.operands[1])
+                        value = u16(machine_read_word(machine, u32(a + 2 * index)))
+
+                    case: unreachable()
+                }
                 machine_write_variable(machine, u16(instruction.store), value)
 
-            case .LOADB:
-                // https://zspec.jaredreisinger.com/15-opcodes#loadb
+            case .STORE:
+                // https://zspec.jaredreisinger.com/15-opcodes#store
                 assert(len(instruction.operands) == 2)
-                assert(instruction.has_store)
-                array := machine_read_operand(machine, &instruction.operands[0])
-                index := machine_read_operand(machine, &instruction.operands[1])
-                machine_write_variable(machine, u16(instruction.store), u16(machine_read_byte(machine, u32(array + index))))
+                variable := machine_read_operand(machine, &instruction.operands[0])
+                value := machine_read_operand(machine, &instruction.operands[1])
+                machine_write_variable(machine, variable, value)
 
-            case .LOADW:
-                // https://zspec.jaredreisinger.com/15-opcodes#loadw
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_store)
+            case .STOREB, .STOREW:
+                // https://zspec.jaredreisinger.com/15-opcodes#storeb
+                // https://zspec.jaredreisinger.com/15-opcodes#storew
+                assert(len(instruction.operands) == 3)
                 array := machine_read_operand(machine, &instruction.operands[0])
                 index := machine_read_operand(machine, &instruction.operands[1])
-                machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
+                value := machine_read_operand(machine, &instruction.operands[2])
+                #partial switch instruction.opcode {
+                    case .STOREB:
+                        assert(value <= 255)
+                        machine_write_byte(machine, u32(array + index), u8(value))
+                    case .STOREW: machine_write_word(machine, u32(array + 2 * index), value)
+                    case: unreachable()
+                }
+
 
             case .NEW_LINE:
                 // https://zspec.jaredreisinger.com/15-opcodes#new_line
@@ -479,30 +500,6 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
                 continue
-
-            case .STORE:
-                // https://zspec.jaredreisinger.com/15-opcodes#store
-                assert(len(instruction.operands) == 2)
-                variable := machine_read_operand(machine, &instruction.operands[0])
-                value := machine_read_operand(machine, &instruction.operands[1])
-                machine_write_variable(machine, variable, value)
-
-            case .STOREB:
-                // https://zspec.jaredreisinger.com/15-opcodes#storeb
-                assert(len(instruction.operands) == 3)
-                array := machine_read_operand(machine, &instruction.operands[0])
-                index := machine_read_operand(machine, &instruction.operands[1])
-                value := machine_read_operand(machine, &instruction.operands[2])
-                assert(value <= 255)
-                machine_write_byte(machine, u32(array + index), u8(value))
-
-            case .STOREW:
-                // https://zspec.jaredreisinger.com/15-opcodes#storew
-                assert(len(instruction.operands) == 3)
-                array := machine_read_operand(machine, &instruction.operands[0])
-                index := machine_read_operand(machine, &instruction.operands[1])
-                value := machine_read_operand(machine, &instruction.operands[2])
-                machine_write_word(machine, u32(array + 2 * index), value)
 
         } // switch instruction.opcode
 
