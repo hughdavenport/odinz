@@ -279,53 +279,34 @@ execute :: proc(machine: ^Machine) {
 
 
 
-            case .CLEAR_ATTR:
+            // Objects
+            case .CLEAR_ATTR, .SET_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#clear_attr
+                // https://zspec.jaredreisinger.com/15-opcodes#set_attr
                 assert(len(instruction.operands) == 2)
                 object := machine_read_operand(machine, &instruction.operands[0])
                 assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
-                object_clear_attr(machine, object, attribute)
+                if instruction.opcode == .CLEAR_ATTR do object_clear_attr(machine, object, attribute)
+                else do object_set_attr(machine, object, attribute)
 
-            case .GET_NEXT_PROP:
+            case .GET_PROP, .GET_PROP_ADDR, .GET_NEXT_PROP:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_prop
+                // https://zspec.jaredreisinger.com/15-opcodes#get_prop_addr
                 // https://zspec.jaredreisinger.com/15-opcodes#get_next_prop
                 assert(len(instruction.operands) == 2)
                 assert(instruction.has_store)
                 object := machine_read_operand(machine, &instruction.operands[0])
-                property := machine_read_operand(machine, &instruction.operands[1])
-                assert(object != 0)
-                next := object_next_property(machine, object, property)
-                machine_write_variable(machine, u16(instruction.store), next)
-
-            case .GET_PARENT:
-                // https://zspec.jaredreisinger.com/15-opcodes#get_parent
-                assert(len(instruction.operands) == 1)
-                assert(instruction.has_store)
-                assert(!instruction.has_branch) // No branch on this instruction
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                parent := object_parent(machine, object)
-                machine_write_variable(machine, u16(instruction.store), parent)
-
-            case .GET_PROP:
-                // https://zspec.jaredreisinger.com/15-opcodes#get_prop
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_store)
-                object := machine_read_operand(machine, &instruction.operands[0])
                 assert(object != 0)
                 property := machine_read_operand(machine, &instruction.operands[1])
-                data := object_get_property(machine, object, property)
+                data: u16
+                #partial switch instruction.opcode {
+                    case .GET_PROP: data = object_get_property(machine, object, property)
+                    case .GET_PROP_ADDR: data = object_get_property_addr(machine, object, property)
+                    case .GET_NEXT_PROP: data = object_next_property(machine, object, property)
+                    case: unreachable()
+                }
                 machine_write_variable(machine, u16(instruction.store), data)
-
-            case .GET_PROP_ADDR:
-                // https://zspec.jaredreisinger.com/15-opcodes#get_prop_addr
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_store)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                property := machine_read_operand(machine, &instruction.operands[1])
-                addr := object_get_property_addr(machine, object, property)
-                machine_write_variable(machine, u16(instruction.store), addr)
 
             case .GET_PROP_LEN:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_prop_len
@@ -341,6 +322,25 @@ execute :: proc(machine: ^Machine) {
                 len := object_get_property_len(machine, address)
                 machine_write_variable(machine, u16(instruction.store), len)
 
+            case .PUT_PROP:
+                // https://zspec.jaredreisinger.com/15-opcodes#put_prop
+                assert(len(instruction.operands) == 3)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                property := machine_read_operand(machine, &instruction.operands[1])
+                value := machine_read_operand(machine, &instruction.operands[2])
+                object_put_property(machine, object, property, value)
+
+            case .GET_PARENT:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_parent
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                assert(!instruction.has_branch) // No branch on this instruction
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                parent := object_parent(machine, object)
+                machine_write_variable(machine, u16(instruction.store), parent)
+
             case .INSERT_OBJ:
                 // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
                 assert(len(instruction.operands) == 2)
@@ -349,6 +349,14 @@ execute :: proc(machine: ^Machine) {
                 destination := machine_read_operand(machine, &instruction.operands[1])
                 assert(destination != 0)
                 object_insert_object(machine, object, destination)
+
+            case .REMOVE_OBJ:
+                // https://zspec.jaredreisinger.com/15-opcodes#remove_obj
+                assert(len(instruction.operands) == 1)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                object_remove_object(machine, object)
+
 
             case .LOAD:
                 // https://zspec.jaredreisinger.com/15-opcodes#load
@@ -444,15 +452,6 @@ execute :: proc(machine: ^Machine) {
                 value := machine_read_operand(machine, &instruction.operands[0])
                 append(&current_frame.stack, value)
 
-            case .PUT_PROP:
-                // https://zspec.jaredreisinger.com/15-opcodes#put_prop
-                assert(len(instruction.operands) == 3)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                property := machine_read_operand(machine, &instruction.operands[1])
-                value := machine_read_operand(machine, &instruction.operands[2])
-                object_put_property(machine, object, property, value)
-
             case .RANDOM:
                 // https://zspec.jaredreisinger.com/15-opcodes#random
                 assert(len(instruction.operands) == 1)
@@ -463,13 +462,6 @@ execute :: proc(machine: ^Machine) {
                 else if range == 0 do rand.reset(u64(time.time_to_unix_nano(time.now())))
                 else do ret = (u16(rand.uint32()) % u16(range)) + 1
                 machine_write_variable(machine, u16(instruction.store), ret)
-
-            case .REMOVE_OBJ:
-                // https://zspec.jaredreisinger.com/15-opcodes#remove_obj
-                assert(len(instruction.operands) == 1)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                object_remove_object(machine, object)
 
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
@@ -487,14 +479,6 @@ execute :: proc(machine: ^Machine) {
                 if current_frame.has_store do machine_write_variable(machine, u16(current_frame.store), ret)
                 delete_frame(current_frame)
                 continue
-
-            case .SET_ATTR:
-                // https://zspec.jaredreisinger.com/15-opcodes#set_attr
-                assert(len(instruction.operands) == 2)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                attribute := machine_read_operand(machine, &instruction.operands[1])
-                object_set_attr(machine, object, attribute)
 
             case .STORE:
                 // https://zspec.jaredreisinger.com/15-opcodes#store
