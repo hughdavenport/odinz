@@ -78,6 +78,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .JZ,
              .LOADB,
              .LOADW,
+             .MOD,
              .MUL,
              .NEW_LINE,
              .PRINT_ADDR,

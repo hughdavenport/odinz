@@ -365,6 +365,14 @@ execute :: proc(machine: ^Machine) {
                 index := machine_read_operand(machine, &instruction.operands[1])
                 machine_write_variable(machine, u16(instruction.store), machine_read_word(machine, u32(array + 2 * index)))
 
+            case .MOD:
+                // https://zspec.jaredreisinger.com/15-opcodes#mod
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), u16(a % b))
+
             case .MUL:
                 // https://zspec.jaredreisinger.com/15-opcodes#mul
                 assert(len(instruction.operands) == 2)
