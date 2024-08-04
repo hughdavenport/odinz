@@ -170,14 +170,6 @@ execute :: proc(machine: ^Machine) {
                 b := u16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), a & b)
 
-            case .TEST:
-                // https://zspec.jaredreisinger.com/15-opcodes#test
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                bitmap := machine_read_operand(machine, &instruction.operands[0])
-                flags := machine_read_operand(machine, &instruction.operands[1])
-                jump_condition = bitmap & flags == flags
-
 
             // Function calling and returning
             case .CALL:
@@ -218,6 +210,75 @@ execute :: proc(machine: ^Machine) {
                 delete_frame(current_frame)
                 continue
 
+
+            // Branches
+            case .JUMP:
+                // https://zspec.jaredreisinger.com/15-opcodes#jump
+                assert(len(instruction.operands) == 1)
+                // JUMP is different in that it takes the offset as an operand
+                offset := i16(machine_read_operand(machine, &instruction.operands[0]))
+                switch offset {
+                    case 0: unimplemented("RFALSE")
+                    case 1: unimplemented("RTRUE")
+                    case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
+                }
+
+            case .JZ, .JL, .JG, .JIN, .TEST, .TEST_ATTR:
+                // https://zspec.jaredreisinger.com/15-opcodes#jz
+                // https://zspec.jaredreisinger.com/15-opcodes#jl
+                // https://zspec.jaredreisinger.com/15-opcodes#jg
+                // https://zspec.jaredreisinger.com/15-opcodes#jin
+                // https://zspec.jaredreisinger.com/15-opcodes#test
+                // https://zspec.jaredreisinger.com/15-opcodes#test_attr
+                assert(len(instruction.operands) >= 1)
+                assert(instruction.has_branch)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                if instruction.opcode == .JZ do jump_condition = a == 0
+                else {
+                    assert(len(instruction.operands) == 2)
+                    b := machine_read_operand(machine, &instruction.operands[1])
+                    #partial switch instruction.opcode {
+                        case .JL: jump_condition = i16(a) < i16(b)
+                        case .JG: jump_condition = i16(a) > i16(b)
+                        case .JIN: jump_condition = object_parent(machine, a) == b
+                        case .TEST: jump_condition = a & b == b
+                        case .TEST_ATTR:
+                            assert(a != 0)
+                            jump_condition = object_test_attr(machine, a, b)
+                        case: unreachable()
+                    }
+                }
+
+            case .JE:
+                // https://zspec.jaredreisinger.com/15-opcodes#je
+                assert(len(instruction.operands) > 1)
+                assert(instruction.has_branch)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                jump_condition = false
+                for &operand in instruction.operands[1:] {
+                    if machine_read_operand(machine, &operand) == a {
+                        jump_condition = true
+                        // Keep going in the loop, incase an operand is the stack
+                    }
+                }
+                break
+
+            case .GET_CHILD, .GET_SIBLING:
+                // https://zspec.jaredreisinger.com/15-opcodes#get_child
+                // https://zspec.jaredreisinger.com/15-opcodes#get_sibling
+                assert(len(instruction.operands) == 1)
+                assert(instruction.has_store)
+                assert(instruction.has_branch)
+                object := machine_read_operand(machine, &instruction.operands[0])
+                assert(object != 0)
+                result: u16
+                if instruction.opcode == .GET_CHILD do result = object_child(machine, object)
+                else do result = object_sibling(machine, object)
+                machine_write_variable(machine, u16(instruction.store), result)
+                jump_condition = result != 0
+
+
+
             case .CLEAR_ATTR:
                 // https://zspec.jaredreisinger.com/15-opcodes#clear_attr
                 assert(len(instruction.operands) == 2)
@@ -225,17 +286,6 @@ execute :: proc(machine: ^Machine) {
                 assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
                 object_clear_attr(machine, object, attribute)
-
-            case .GET_CHILD:
-                // https://zspec.jaredreisinger.com/15-opcodes#get_child
-                assert(len(instruction.operands) == 1)
-                assert(instruction.has_store)
-                assert(instruction.has_branch)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                child := object_child(machine, object)
-                machine_write_variable(machine, u16(instruction.store), child)
-                jump_condition = child != 0
 
             case .GET_NEXT_PROP:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_next_prop
@@ -291,17 +341,6 @@ execute :: proc(machine: ^Machine) {
                 len := object_get_property_len(machine, address)
                 machine_write_variable(machine, u16(instruction.store), len)
 
-            case .GET_SIBLING:
-                // https://zspec.jaredreisinger.com/15-opcodes#get_sibling
-                assert(len(instruction.operands) == 1)
-                assert(instruction.has_store)
-                assert(instruction.has_branch)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                sibling := object_sibling(machine, object)
-                machine_write_variable(machine, u16(instruction.store), sibling)
-                jump_condition = sibling != 0
-
             case .INSERT_OBJ:
                 // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
                 assert(len(instruction.operands) == 2)
@@ -310,60 +349,6 @@ execute :: proc(machine: ^Machine) {
                 destination := machine_read_operand(machine, &instruction.operands[1])
                 assert(destination != 0)
                 object_insert_object(machine, object, destination)
-
-            case .JE:
-                // https://zspec.jaredreisinger.com/15-opcodes#je
-                assert(len(instruction.operands) > 1)
-                assert(instruction.has_branch)
-                a := machine_read_operand(machine, &instruction.operands[0])
-                jump_condition = false
-                for &operand in instruction.operands[1:] {
-                    if machine_read_operand(machine, &operand) == a {
-                        jump_condition = true
-                        // Keep going in the loop, incase an operand is the stack
-                    }
-                }
-                break
-
-            case .JG:
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                a := i16(machine_read_operand(machine, &instruction.operands[0]))
-                b := i16(machine_read_operand(machine, &instruction.operands[1]))
-                jump_condition = a > b
-
-            case .JIN:
-                // https://zspec.jaredreisinger.com/15-opcodes#jin
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                a := machine_read_operand(machine, &instruction.operands[0])
-                b := machine_read_operand(machine, &instruction.operands[1])
-                jump_condition = object_parent(machine, a) == b
-
-            case .JL:
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                a := i16(machine_read_operand(machine, &instruction.operands[0]))
-                b := i16(machine_read_operand(machine, &instruction.operands[1]))
-                jump_condition = a < b
-
-            case .JUMP:
-                // https://zspec.jaredreisinger.com/15-opcodes#jump
-                assert(len(instruction.operands) == 1)
-                // JUMP is different in that it takes the offset as an operand
-                offset := i16(machine_read_operand(machine, &instruction.operands[0]))
-                switch offset {
-                    case 0: unimplemented("RFALSE")
-                    case 1: unimplemented("RTRUE")
-                    case: current_frame.pc = u32(i32(current_frame.pc) + i32(offset) - 2)
-                }
-
-            case .JZ:
-                // https://zspec.jaredreisinger.com/15-opcodes#jz
-                assert(len(instruction.operands) == 1)
-                assert(instruction.has_branch)
-                a := machine_read_operand(machine, &instruction.operands[0])
-                jump_condition = a == 0
 
             case .LOAD:
                 // https://zspec.jaredreisinger.com/15-opcodes#load
@@ -534,15 +519,6 @@ execute :: proc(machine: ^Machine) {
                 index := machine_read_operand(machine, &instruction.operands[1])
                 value := machine_read_operand(machine, &instruction.operands[2])
                 machine_write_word(machine, u32(array + 2 * index), value)
-
-            case .TEST_ATTR:
-                // https://zspec.jaredreisinger.com/15-opcodes#test_attr
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_branch)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                attribute := machine_read_operand(machine, &instruction.operands[1])
-                jump_condition = object_test_attr(machine, object, attribute)
 
         } // switch instruction.opcode
 
