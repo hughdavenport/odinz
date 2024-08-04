@@ -112,6 +112,7 @@ execute :: proc(machine: ^Machine) {
         switch instruction.opcode {
             case .UNKNOWN:
                 unreachable("Invalid opcode while executing instruction %v", instruction)
+            // Arithmetic
             case .ADD, .SUB, .MUL, .DIV, .MOD:
                 // https://zspec.jaredreisinger.com/15-opcodes#add
                 // https://zspec.jaredreisinger.com/15-opcodes#sub
@@ -133,6 +134,8 @@ execute :: proc(machine: ^Machine) {
                 }
                 machine_write_variable(machine, u16(instruction.store), u16(value))
 
+
+            // Increment and decement
             case .INC, .INC_CHK, .DEC, .DEC_CHK:
                 // https://zspec.jaredreisinger.com/15-opcodes#inc
                 // https://zspec.jaredreisinger.com/15-opcodes#inc_chk
@@ -157,6 +160,8 @@ execute :: proc(machine: ^Machine) {
                     case: unreachable()
                 }
 
+
+            // Bitwise operators
             case .AND:
                 // https://zspec.jaredreisinger.com/15-opcodes#and
                 assert(len(instruction.operands) == 2)
