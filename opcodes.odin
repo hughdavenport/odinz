@@ -15,60 +15,62 @@ OpcodeType :: enum {
 // https://zspec.jaredreisinger.com/15-opcodes
 Opcode :: enum {
     UNKNOWN,
-    ADD,
+
+    // Arithmetic
+    ADD, SUB,
+    MUL, DIV, MOD,
+
+    // Increment and decrement
+    INC, INC_CHK,
+    DEC, DEC_CHK,
+
+    // Bitwise operators
     AND,
-    CALL,
-    CLEAR_ATTR,
-    DEC,
-    DEC_CHK,
-    DIV,
-    GET_CHILD,
-    GET_NEXT_PROP,
-    GET_PARENT,
-    GET_PROP,
-    GET_PROP_ADDR,
-    GET_PROP_LEN,
-    GET_SIBLING,
-    INC,
-    INC_CHK,
-    INSERT_OBJ,
-    JE,
-    JG,
-    JIN,
-    JL,
+    TEST,
+
+    // Function calling and returning
+    CALL, RET, RFALSE, RTRUE,
+    // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
+
+    // Jumps
     JUMP,
     JZ,
-    LOAD,
-    LOADB,
-    LOADW,
-    MOD,
-    MUL,
+    JL, JE, JG,
+    // Also TEST_ATTR and JIN listed with objects
+    // Also TEST listed with bitwise
+
+    // Objects
+    TEST_ATTR, CLEAR_ATTR, SET_ATTR,
+    GET_PROP, GET_PROP_LEN, GET_PROP_ADDR, GET_NEXT_PROP,
+    PUT_PROP,
+    GET_PARENT, GET_CHILD, GET_SIBLING,
+    INSERT_OBJ, REMOVE_OBJ,
+    JIN,
+
+    // Loads and stores
+    LOAD, LOADB, LOADW,
+    STORE, STOREB, STOREW,
+
+    // Printing
     NEW_LINE,
     PRINT,
-    PRINT_ADDR,
     PRINT_CHAR,
     PRINT_NUM,
     PRINT_OBJ,
+    PRINT_ADDR,
     PRINT_PADDR,
     PRINT_RET,
-    PULL,
-    PUSH,
-    PUT_PROP,
-    RANDOM,
-    REMOVE_OBJ,
-    QUIT,
+
+    // Input
     READ,
-    RET,
+
+    // Stack
+    PULL, PUSH,
     RET_POPPED,
-    RFALSE,
-    RTRUE,
-    SET_ATTR,
-    STORE,
-    STOREB,
-    STOREW,
-    SUB,
-    TEST,
-    TEST_ATTR,
+
+    // Misc
+    RANDOM,
+    QUIT,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
