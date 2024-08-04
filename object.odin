@@ -298,23 +298,7 @@ object_remove_object :: proc(machine: ^Machine, object_number: u16) {
 object_insert_object :: proc(machine: ^Machine, object_number: u16, destination_number: u16) {
     assert(object_number != 0)
     assert(destination_number != 0)
-    header := machine_header(machine)
-
-    // First remove object from where it was in the tree
-    obj_parent := object_parent(machine, object_number)
-    if obj_parent != 0 {
-        obj_parent_child := object_child(machine, obj_parent)
-        sibling := object_sibling(machine, object_number)
-        if obj_parent_child == object_number {
-            object_set_child(machine, obj_parent, sibling)
-        } else {
-            child := obj_parent_child
-            for ; child != 0 && object_sibling(machine, child) != object_number ;
-                  child = object_sibling(machine, child) {}
-            object_set_sibling(machine, child, sibling)
-        }
-    }
-
+    object_remove_object(machine, object_number)
     object_set_sibling(machine, object_number, object_child(machine, destination_number))
     object_set_child(machine, destination_number, object_number)
     object_set_parent(machine, object_number, destination_number)
