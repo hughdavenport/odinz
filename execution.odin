@@ -412,6 +412,7 @@ execute :: proc(machine: ^Machine) {
                 }
 
 
+            // Printing
             case .NEW_LINE:
                 // https://zspec.jaredreisinger.com/15-opcodes#new_line
                 fmt.println()
@@ -422,37 +423,24 @@ execute :: proc(machine: ^Machine) {
                 assert(instruction.has_zstring)
                 fmt.print(instruction.zstring)
 
-            case .PRINT_ADDR:
-                // https://zspec.jaredreisinger.com/15-opcodes#print_addr
-                assert(len(instruction.operands) == 1)
-                addr := machine_read_operand(machine, &instruction.operands[0])
-                zstring_dump(machine, u32(addr))
-
-            case .PRINT_CHAR:
+            case .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_char
-                assert(len(instruction.operands) == 1)
-                char := machine_read_operand(machine, &instruction.operands[0])
-                fmt.print(zstring_output_zscii(machine, char))
-
-            case .PRINT_NUM:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_num
-                assert(len(instruction.operands) == 1)
-                value := i16(machine_read_operand(machine, &instruction.operands[0]))
-                fmt.print(value)
-
-            case .PRINT_OBJ:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_obj
-                assert(len(instruction.operands) == 1)
-                object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                fmt.print(object_name(machine, object))
-
-            case .PRINT_PADDR:
+                // https://zspec.jaredreisinger.com/15-opcodes#print_addr
                 // https://zspec.jaredreisinger.com/15-opcodes#print_paddr
                 assert(len(instruction.operands) == 1)
-                packed := machine_read_operand(machine, &instruction.operands[0])
-                str_addr := packed_addr(machine, packed)
-                zstring_dump(machine, str_addr)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                #partial switch instruction.opcode {
+                    case .PRINT_CHAR: fmt.print(zstring_output_zscii(machine, a))
+                    case .PRINT_NUM: fmt.print(i16(a))
+                    case .PRINT_OBJ:
+                        assert(a != 0)
+                        fmt.print(object_name(machine, a))
+                    case .PRINT_ADDR: fmt.print(zstring_read(machine, u32(a)))
+                    case .PRINT_PADDR: fmt.print(zstring_read(machine, packed_addr(machine, a)))
+                    case: unreachable()
+                }
 
             case .PRINT_RET:
                 // https://zspec.jaredreisinger.com/15-opcodes#print_ret

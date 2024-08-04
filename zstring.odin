@@ -152,11 +152,6 @@ zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> stri
     return ret
 }
 
-zstring_dump :: proc(machine: ^Machine, address: u32, length: u8 = 0) {
-    len := length
-    fmt.print(zstring_read(machine, address, &len))
-}
-
 zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
     header := machine_header(machine)
     assert(char <= 1023)
