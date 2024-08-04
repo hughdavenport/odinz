@@ -155,8 +155,11 @@ execute :: proc(machine: ^Machine) {
                     case .INC_CHK, .DEC_CHK:
                         assert(len(instruction.operands) == 2)
                         value := i16(machine_read_operand(machine, &instruction.operands[1]))
-                        if instruction.opcode == .INC_CHK do jump_condition = x > value
-                        else do jump_condition = x < value
+                        #partial switch instruction.opcode {
+                            case .INC_CHK: jump_condition = x > value
+                            case .DEC_CHK: jump_condition = x < value
+                            case: unreachable()
+                        }
                     case: unreachable()
                 }
 
@@ -272,8 +275,11 @@ execute :: proc(machine: ^Machine) {
                 object := machine_read_operand(machine, &instruction.operands[0])
                 assert(object != 0)
                 result: u16
-                if instruction.opcode == .GET_CHILD do result = object_child(machine, object)
-                else do result = object_sibling(machine, object)
+                #partial switch instruction.opcode {
+                    case .GET_CHILD: result = object_child(machine, object)
+                    case .GET_SIBLING: result = object_sibling(machine, object)
+                    case: unreachable()
+                }
                 machine_write_variable(machine, u16(instruction.store), result)
                 jump_condition = result != 0
 
@@ -287,8 +293,11 @@ execute :: proc(machine: ^Machine) {
                 object := machine_read_operand(machine, &instruction.operands[0])
                 assert(object != 0)
                 attribute := machine_read_operand(machine, &instruction.operands[1])
-                if instruction.opcode == .CLEAR_ATTR do object_clear_attr(machine, object, attribute)
-                else do object_set_attr(machine, object, attribute)
+                #partial switch instruction.opcode {
+                    case .CLEAR_ATTR: object_clear_attr(machine, object, attribute)
+                    case .SET_ATTR: object_set_attr(machine, object, attribute)
+                    case: unreachable()
+                }
 
             case .GET_PROP, .GET_PROP_ADDR, .GET_NEXT_PROP:
                 // https://zspec.jaredreisinger.com/15-opcodes#get_prop
