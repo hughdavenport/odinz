@@ -225,7 +225,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
         }
         loc.line += i32(num) + 1 // Where the entry should be (if array filled til then)
         fmt.println()
-        fmt.printfln("%s Unimplemented Opcode 0x%02X\n%x: %s:%d %02x", loc, num, address, type_s, num + offset, num)
+        fmt.printfln("%s Unimplemented Opcode 0x%02X\n%x: %s:%d %02X", loc, num, address, type_s, num + offset, num)
         cmd := fmt.ctprintf("txd -n %s | grep %x:", machine.romfile, address)
         debug("CMD: %v", cmd)
         libc.system(cmd)
