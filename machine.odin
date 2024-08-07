@@ -91,7 +91,42 @@ machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
     return u16(machine_read_byte(machine, address)) << 8 + u16(machine_read_byte(machine, address + 1))
 }
 
+machine_write_header :: proc(machine: ^Machine, address: u32, value: u8) {
+    assert(address <= 0x40)
+    if address != 0x10 && address != 0x11 {
+        // Most bytes are not writable, in fact only flags2
+        unreachable("Illegal write to header address 0x%02x", address)
+    }
+    header := machine_header(machine)
+    flag: Flags2 = {.transcript, .forced_mono, .redraw}
+    if address == 0x10 do flag &= transmute(Flags2)u16(value)
+    if address == 0x11 do flag &= transmute(Flags2)(u16(value) << 8)
+
+    if (address == 0x10 && u8(transmute(u16)flag) != value) ||
+            (address == 0x11 && u8(transmute(u16)flag >> 8) != value) {
+        unreachable("Illegal write to header flag 2 with these immutable flags set: %v", flag)
+    }
+
+    if (flag & {.transcript}) != (header.flags2 & {.transcript}) {
+        unimplemented()
+    }
+
+    if (flag & {.forced_mono}) != (header.flags2 & {.forced_mono}) {
+        if header.version < 3 do unreachable()
+        unimplemented()
+    }
+
+    if (flag & {.redraw}) != (header.flags2 & {.redraw}) {
+        if header.version < 6 do unreachable()
+        // This is in response to interpreter asking, so don't care
+    }
+}
+
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
+    if address <= 0x40 {
+        machine_write_header(machine, address, value)
+        return
+    }
     if int(address) >= len(machine.memory) do unreachable("Memory out of bounds, WRITE 0x%02X @ 0x%02x. Max = 0x%02x", value, address, len(machine.memory))
     if .write in machine.config.trace do fmt.printfln("WRITE @ 0x%04x: 0x%02x", address, value)
     machine.memory[address] = value
@@ -214,19 +249,16 @@ _initilise_machine_flags1 :: proc(machine: ^Machine) {
 @(private="file")
 _initilise_machine_flags2 :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    flags2 := transmute(Flags2)header.flags2
-    flags2 -= {.transcript, .forced_mono, .pictures, .undo, .mouse, .sounds, .menus}
+    header.flags2 -= {.transcript, .forced_mono, .pictures, .undo, .mouse, .sounds, .menus}
 
     // FIXME add config options
-    if header.version >= 3 && true do flags2 += {.forced_mono}
-    if false do flags2 += {.transcript}
-    if header.version >= 5 && false do flags2 += {.pictures}
-    if header.version >= 5 && false do flags2 += {.undo}
-    if header.version >= 5 && false do flags2 += {.mouse}
-    if header.version >= 5 && false do flags2 += {.sounds}
-    if header.version >= 6 && false do flags2 += {.menus}
-
-    header.flags2 = transmute(u16be)flags2
+    if header.version >= 3 && true do header.flags2 += {.forced_mono}
+    if false do header.flags2 += {.transcript}
+    if header.version >= 5 && false do header.flags2 += {.pictures}
+    if header.version >= 5 && false do header.flags2 += {.undo}
+    if header.version >= 5 && false do header.flags2 += {.mouse}
+    if header.version >= 5 && false do header.flags2 += {.sounds}
+    if header.version >= 6 && false do header.flags2 += {.menus}
 }
 
 initialise_machine :: proc(machine: ^Machine) {

@@ -52,7 +52,7 @@ Header :: struct {
     objects: u16be `fmt:"x"`,
     globals: u16be `fmt:"x"`,
     static: u16be `fmt:"x"`,
-    flags2: u16be `fmt:"b"`,
+    flags2: Flags2 `fmt:"b"`,
     serial: [6]u8 `fmt:"s"`,
     abbreviations: u16be `fmt:"x"`,
     length: u16be `fmt:"x"`,
