@@ -161,7 +161,12 @@ zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
         case 1..=7: unreachable()
         case 8: unreachable() // delete, undefined for output
         case 9:
-            if header.version != 6 do unreachable() // undefined
+            if header.version != 6 {
+                // NOTE: Used in Zork 1 88/840726 when reading tan label inside boat (version 3)
+                debug("Tab is only defined for version 6, but used here in version %d", header.version)
+                return "\t"
+                // unreachable() // undefined
+            }
             return "\t"
         case 10: unreachable()
         case 11:
