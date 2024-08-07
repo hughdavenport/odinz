@@ -99,7 +99,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .TEST:
             operands_dump(instruction.operands[:])
 
-        case .CALL:
+        case .CALL, .CALL_1N:
             assert(len(instruction.operands) > 0)
             switch instruction.operands[0].type {
                 case .SMALL_CONSTANT, .LARGE_CONSTANT:

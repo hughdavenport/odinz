@@ -202,6 +202,16 @@ execute :: proc(machine: ^Machine) {
                     continue
                 }
 
+            case .CALL_1N:
+                // https://zspec.jaredreisinger.com/15-opcodes#call_1n
+                assert(len(instruction.operands) == 1)
+                packed := machine_read_operand(machine, &instruction.operands[0])
+                routine_addr := packed_addr(machine, packed)
+                if routine_addr == 0 do continue
+                routine := routine_read(machine, routine_addr)
+                append(&machine.frames, routine)
+                continue
+
             case .RET, .RFALSE, .RTRUE:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret
                 // https://zspec.jaredreisinger.com/15-opcodes#rfalse

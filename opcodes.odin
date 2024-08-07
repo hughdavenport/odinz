@@ -28,7 +28,8 @@ Opcode :: enum {
     AND,
 
     // Function calling and returning
-    CALL, RET, RFALSE, RTRUE,
+    CALL, CALL_1N,
+    RET, RFALSE, RTRUE,
     // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
 
     // Branches
@@ -146,7 +147,7 @@ one_ops := [?]Opcode{
     0x0C = .JUMP,
     0x0D = .PRINT_PADDR,
     0x0E = .LOAD,
-    0x0F = .UNKNOWN,
+    0x0F = .CALL_1N,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -245,7 +246,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .DEC,
              .AND,
-             .CALL, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .RET, .RFALSE, .RTRUE,
              .JUMP, // This is an odd one out
              .CLEAR_ATTR, .SET_ATTR,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
@@ -285,7 +286,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
         // Instruction does not need to store
         case .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .RET, .RFALSE, .RTRUE,
+             .CALL_1N, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
@@ -312,7 +313,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .INC_CHK, .DEC, .DEC_CHK,
              .AND,
-             .CALL, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
