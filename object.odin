@@ -57,7 +57,7 @@ object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
 object_name :: proc(machine: ^Machine, object_number: u16) -> string {
     if object_number == 0 do return ""
     properties := object_properties(machine, object_number)
-    length := machine_read_byte(machine, u32(properties))
+    length := u16(machine_read_byte(machine, u32(properties)))
 
     if length == 0 do return ""
     return zstring_read(machine, u32(properties) + 1, &length)

@@ -112,13 +112,13 @@ delete_zstring :: proc(zstring: ZString) {
     strings.builder_destroy(zstring.sb)
 }
 
-zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> string {
+zstring_read :: proc(machine: ^Machine, address: u32, length: ^u16 = nil) -> string {
     sb, err := strings.builder_make_none()
     if err != nil do unreachable("Buy more RAM: %v", err)
     zstring := ZString{sb = &sb}
     defer delete_zstring(zstring)
     if length != nil && length^ > 0 {
-        for i: u8 = 0; i < length^; i = i + 1 {
+        for i: u16 = 0; i < length^; i = i + 1 {
             word := machine_read_word(machine, address + u32(i) * 2)
 
             zstring_process_zchar(machine, &zstring, u8((word >> 10) & 0b11111))
@@ -145,7 +145,7 @@ zstring_read :: proc(machine: ^Machine, address: u32, length: ^u8 = nil) -> stri
             zstring_process_zchar(machine, &zstring, u8((word >> 0) & 0b11111))
             if bit(u8(word >> 8), 7) do break
         }
-        if length != nil do length^ = u8(i + 2)
+        if length != nil do length^ = u16(i + 2)
     }
     ret, err2 := strings.clone(strings.to_string(zstring.sb^))
     if err2 != nil do unreachable("Buy more RAM: %v", err2)

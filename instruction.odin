@@ -25,7 +25,7 @@ Instruction :: struct {
     has_zstring: bool,
     zstring: string,
     address: u32,
-    length: u8,
+    length: u16,
 }
 
 @(private="file")
@@ -66,7 +66,7 @@ instruction_read_zstring :: proc(machine: ^Machine, instruction: ^Instruction) {
     instruction.has_zstring = opcode_needs_zstring(machine, instruction.opcode)
 
     if instruction.has_zstring {
-        length: u8 = 0
+        length: u16 = 0
         instruction.zstring = zstring_read(machine, instruction.address + u32(instruction.length), &length)
         instruction.length += length
     }
