@@ -85,11 +85,6 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
 
 execute :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    if header.version != 3 && header.version != 5 {
-        unimplemented(
-            fmt.tprintf("Unsupported version %d in '%s'", machine.memory[0], machine.romfile)
-        )
-    }
 
     for {
         machine_dump(machine, to_disk = true)

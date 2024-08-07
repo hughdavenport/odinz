@@ -231,9 +231,10 @@ _initilise_machine_flags2 :: proc(machine: ^Machine) {
 
 initialise_machine :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    append(&machine.frames, Frame {
-        pc = u32(header.initialpc),
-    })
+    if header.version == 6 {
+        routine := routine_read(machine, packed_addr(machine, u16(header.initialpc)))
+        append(&machine.frames, routine)
+    } else do append(&machine.frames, Frame { pc = u32(header.initialpc) })
 
     _initilise_machine_flags1(machine)
     _initilise_machine_flags2(machine)
@@ -243,7 +244,10 @@ initialise_machine :: proc(machine: ^Machine) {
         header.interpreter_version = 0
     }
 
-    if header.version >= 5 && header.extension != 0 do unimplemented()
+    if header.version >= 5 && header.extension != 0 {
+        debug("unimplented header extension ignored")
+        // unimplemented()
+    }
 
     // Adhere's to Standard 1.1
     header.revision = 0x101
