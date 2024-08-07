@@ -75,7 +75,7 @@ bit :: proc(byte: u8, bit: u8) -> bool {
 }
 
 machine_read_byte :: proc(machine: ^Machine, address: u32) -> u8 {
-    if int(address) >= len(machine.memory) do unreachable()
+    if int(address) >= len(machine.memory) do unreachable("Memory out of bounds, READ @ 0x%02x. Max = 0x%02x", address, len(machine.memory))
     if .read in machine.config.trace do fmt.printfln("READ @ 0x%04x: 0x%02x", address, machine.memory[address])
     return machine.memory[address]
 }
@@ -92,7 +92,7 @@ machine_read_word :: proc(machine: ^Machine, address: u32) -> u16 {
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
-    if int(address) >= len(machine.memory) do unreachable()
+    if int(address) >= len(machine.memory) do unreachable("Memory out of bounds, WRITE 0x%02X @ 0x%02x. Max = 0x%02x", value, address, len(machine.memory))
     if .write in machine.config.trace do fmt.printfln("WRITE @ 0x%04x: 0x%02x", address, value)
     machine.memory[address] = value
 }
