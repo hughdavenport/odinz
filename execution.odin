@@ -175,6 +175,14 @@ execute :: proc(machine: ^Machine) {
                 b := u16(machine_read_operand(machine, &instruction.operands[1]))
                 machine_write_variable(machine, u16(instruction.store), a & b)
 
+            case .OR:
+                // https://zspec.jaredreisinger.com/15-opcodes#or
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := u16(machine_read_operand(machine, &instruction.operands[0]))
+                b := u16(machine_read_operand(machine, &instruction.operands[1]))
+                machine_write_variable(machine, u16(instruction.store), a | b)
+
 
             // Function calling and returning
             case .CALL:
