@@ -231,15 +231,9 @@ _initilise_machine_flags2 :: proc(machine: ^Machine) {
 
 initialise_machine :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    if header.version != 3 && header.version != 5 {
-        unimplemented(
-            fmt.tprintf("Unsupported version %d in '%s'", header.version, machine.romfile)
-        )
-    }
     append(&machine.frames, Frame {
         pc = u32(header.initialpc),
     })
-    // FIXME set various bits and stuff in header
 
     _initilise_machine_flags1(machine)
     _initilise_machine_flags2(machine)

@@ -142,8 +142,8 @@ header_flags1_print :: proc(header: ^Header) {
             fmt.printf(", and also these: %w", rest)
         }
 
-    case 4, 5, 6:
-        unimplemented(fmt.tprint("Unsupported version", header.version))
+    case 4, 5, 6, 7, 8:
+        fmt.printf("None")
 
     case: unreachable("Error printing flags of header, invalid version %d", header.version)
     }
@@ -156,16 +156,41 @@ header_flags2_print :: proc(header: ^Header) {
     flags := transmute(Flags2)header.flags2
     switch (header.version) {
         // Go from highest to lowest, add new bit in that version, then *fallthrough*
-    case 6:
-        unimplemented(fmt.tprint("Unsupported version", header.version))
-        // fallthrough
+    case 6, 7, 8:
+        if .menus in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports menus")
+        }
+        fallthrough
     case 5:
-        unimplemented(fmt.tprint("Unsupported version", header.version))
-        // fallthrough
-    case 4:
-        unimplemented(fmt.tprint("Unsupported version", header.version))
-        // fallthrough
-    case 3:
+        if .pictures in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports pictures")
+        }
+        if .undo in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports undo")
+        }
+        if .mouse in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports mouse")
+        }
+        if .colour in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports colour")
+        }
+        if .sounds in flags {
+            if print_comma do fmt.print(", ")
+            else do print_comma = true
+            fmt.print("Supports sounds")
+        }
+        fallthrough
+    case 3, 4:
         if .forced_mono in flags {
             if print_comma do fmt.print(", ")
             else do print_comma = true
@@ -175,9 +200,7 @@ header_flags2_print :: proc(header: ^Header) {
         //          if so, then check .undo and print about sounds
         //          Appendix B
         fallthrough
-    case 2:
-        fallthrough
-    case 1:
+    case 1, 2:
         if .transcript in flags {
             if print_comma do fmt.print(", ")
             else do print_comma = true
@@ -198,7 +221,6 @@ header_dump :: proc(machine: ^Machine) {
     fmt.eprintfln("raw header = %02x", raw_header)
     fmt.eprintfln("header struct = %#v", header^)
 
-    if header.version != 3 do unimplemented(fmt.tprint("Unsupported version", header.version))
     // Based off output from infodump
 
     fmt.printfln("Story file is %s", machine.romfile)
@@ -223,7 +245,7 @@ header_dump :: proc(machine: ^Machine) {
 
     file_length := int(header.length)
     switch {
-    case header.version <=3: file_length *= 2
+    case header.version <= 3: file_length *= 2
     case header.version <= 5: file_length *= 4
     case: file_length *= 8
     }
@@ -242,10 +264,16 @@ header_dump :: proc(machine: ^Machine) {
         fmt.printfln("%-26s%04x", "Checksum (matches):", header.checksum)
     }
 
-    // TODO rest of header defined in 4+
-
-    // TODO header extension defined in 5+
-    //          will include flags3
+    if header.version >= 6 {
+        fmt.printfln("%-26s%04x", "Routines offset:", header.routines)
+        fmt.printfln("%-26s%04x", "Strings offset:", header.strings)
+    }
+    if header.version >= 5 {
+        fmt.printfln("%-26s%04x", "Terminating address:", header.terminating)
+        fmt.printfln("%-26s%04x", "Alphabet address", header.alphabet)
+        fmt.printfln("%-26s%04x", "Header extension address", header.extension)
+        if header.extension != 0 do unimplemented("flags3, unicode address, etc from extensions")
+    }
 }
 
 
