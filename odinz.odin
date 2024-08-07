@@ -59,7 +59,7 @@ unimplemented :: proc(format: string = "", args: ..any, loc := #caller_location)
     os.exit(int(EXIT_CODE.software))
 }
 
-check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
+check_args :: proc(progname: string, args: ^[]string, config: ^Config) {
     for len(args^) > 0 && strings.has_prefix(args^[0], "-") {
         if args^[0] == "--" {
             args^ = args^[1:]
@@ -85,15 +85,15 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             continue
         }
         switch arg {
-            case "-t", "--trace", "--trace=all": config.trace = ~{}
-            case "-tb", "--trace=backtrace": config.trace |= {.backtrace}
-            case "-tf", "--trace=frame": config.trace |= {.frame}
-            case "-ti", "--trace=instruction": config.trace |= {.instruction}
-            case "-tr", "--trace=read": config.trace |= {.read}
-            case "-tw", "--trace=write": config.trace |= {.write}
-            case "-sl", "--status-line": config.status = true
-            case "-ss", "--screen-split": config.screen_split = true
-            case "-as", "--alternative-screen": config.alternate_screen = true
+            case "-t", "--trace", "--trace=all": config^.trace = ~{}
+            case "-tb", "--trace=backtrace": config^.trace |= {.backtrace}
+            case "-tf", "--trace=frame": config^.trace |= {.frame}
+            case "-ti", "--trace=instruction": config^.trace |= {.instruction}
+            case "-tr", "--trace=read": config^.trace |= {.read}
+            case "-tw", "--trace=write": config^.trace |= {.write}
+            case "-sl", "--status-line": config^.status = true
+            case "-ss", "--screen-split": config^.screen_split = true
+            case "-as", "--alternative-screen": config^.alternate_screen = true
             case "-ps", "--print-seed":
                 seed := rand.uint64()
                 fmt.printfln("Random seet is %d", seed)
@@ -101,7 +101,6 @@ check_args :: proc(progname: string, args: ^[]string) -> (config: Config) {
             case: usage_and_exit(progname)
         }
     }
-    return config
 }
 
 main :: proc() {
@@ -111,14 +110,14 @@ main :: proc() {
     progname := args[0]
     args = args[1:]
 
-    config = check_args(progname, &args)
+    check_args(progname, &args, &config)
 
     if len(args) == 0 do usage_and_exit(progname)
     romfile := args[0]
     args = args[1:]
     if !os.exists(romfile) do error(fmt.tprintf("File '%s' does not exist", romfile), EXIT_CODE.no_input)
 
-    config = check_args(progname, &args)
+    check_args(progname, &args, &config)
 
     data, ok := os.read_entire_file(romfile)
     if !ok do error(fmt.tprintf("Could not read '%s'", romfile), EXIT_CODE.io_error)
