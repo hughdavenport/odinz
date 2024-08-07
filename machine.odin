@@ -150,7 +150,7 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
             }
             return word
 
-        case 16..<255: return machine_read_global(machine, variable - 16)
+        case 16..=255: return machine_read_global(machine, variable - 16)
         case: unreachable("Error while reading variable. Unexpected number %d", variable)
     }
 }
@@ -170,7 +170,7 @@ machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
             }
             current_frame.variables[variable - 1] = value
 
-        case 16..<255: machine_write_global(machine, variable - 16, value)
+        case 16..=255: machine_write_global(machine, variable - 16, value)
         case:
             unreachable("Error while writing variable. Unexpected number %d", variable)
     }
