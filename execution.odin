@@ -207,6 +207,21 @@ execute :: proc(machine: ^Machine) {
                 append(&machine.frames, routine)
                 continue
 
+            case .CALL_VN:
+                // https://zspec.jaredreisinger.com/15-opcodes#call_vn
+                assert(len(instruction.operands) > 0)
+                assert(!instruction.has_store)
+                packed := machine_read_operand(machine, &instruction.operands[0])
+                routine_addr := packed_addr(machine, packed)
+                if routine_addr == 0 do continue
+                routine := routine_read(machine, routine_addr)
+                for i := 1; i < len(instruction.operands); i += 1 {
+                    value := machine_read_operand(machine, &instruction.operands[i])
+                    routine.variables[i - 1] = value
+                }
+                append(&machine.frames, routine)
+                continue
+
             case .RET, .RFALSE, .RTRUE:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret
                 // https://zspec.jaredreisinger.com/15-opcodes#rfalse

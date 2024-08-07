@@ -28,7 +28,7 @@ Opcode :: enum {
     AND,
 
     // Function calling and returning
-    CALL, CALL_1N,
+    CALL, CALL_1N, CALL_VN,
     RET, RFALSE, RTRUE,
     // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
 
@@ -101,7 +101,7 @@ var_ops := [?]Opcode{
     0x16 = .UNKNOWN,
     0x17 = .UNKNOWN,
     0x18 = .UNKNOWN,
-    0x19 = .UNKNOWN,
+    0x19 = .CALL_VN,
     0x1A = .UNKNOWN,
     0x1B = .UNKNOWN,
     0x1C = .UNKNOWN,
@@ -246,7 +246,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .DEC,
              .AND,
-             .CALL, .CALL_1N, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, // This is an odd one out
              .CLEAR_ATTR, .SET_ATTR,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
@@ -286,7 +286,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
         // Instruction does not need to store
         case .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .CALL_1N, .RET, .RFALSE, .RTRUE,
+             .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
@@ -313,7 +313,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .INC_CHK, .DEC, .DEC_CHK,
              .AND,
-             .CALL, .CALL_1N, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
