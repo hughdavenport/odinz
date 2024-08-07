@@ -185,14 +185,53 @@ machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
 }
 
 @(private="file")
-add_flag1_v3 :: proc(machine: ^Machine, flag: Flags1_V3) {
+_initilise_machine_flags1 :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    header.flags1 = transmute(u8)(transmute(Flags1_V3)header.flags1 + flag)
+    if header.version <= 3 {
+        flags := transmute(Flags1_V3)header.flags1
+        flags -= {.status_unavail, .screen_split, .variable_font}
+        if !machine.config.status do flags += {.status_unavail}
+        if machine.config.screen_split do flags += {.screen_split}
+        // FIXME add a config option
+        if false do flags += {.variable_font}
+        header.flags1 = transmute(u8)flags
+    } else {
+        flags1 := transmute(Flags1_V4)header.flags1
+        flags1 = {}
+        // FIXME add config options
+        if header.version >= 6 && false do flags1 += {.pictures}
+        if header.version >= 6 && false do flags1 += {.sounds}
+        if false do flags1 += {.timed}
+        // FIXME add config options, or detect based on term?
+        if header.version >= 5 && false do flags1 += {.colors}
+        if false do flags1 += {.boldface}
+        if false do flags1 += {.italics}
+        if false do flags1 += {.monospace}
+        header.flags1 = transmute(u8)flags1
+    }
+}
+
+@(private="file")
+_initilise_machine_flags2 :: proc(machine: ^Machine) {
+    header := machine_header(machine)
+    flags2 := transmute(Flags2)header.flags2
+    flags2 -= {.transcript, .forced_mono, .pictures, .undo, .mouse, .sounds, .menus}
+
+    // FIXME add config options
+    if header.version >= 3 && true do flags2 += {.forced_mono}
+    if false do flags2 += {.transcript}
+    if header.version >= 5 && false do flags2 += {.pictures}
+    if header.version >= 5 && false do flags2 += {.undo}
+    if header.version >= 5 && false do flags2 += {.mouse}
+    if header.version >= 5 && false do flags2 += {.sounds}
+    if header.version >= 6 && false do flags2 += {.menus}
+
+    header.flags2 = transmute(u16be)flags2
 }
 
 initialise_machine :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    if header.version != 3 {
+    if header.version != 3 && header.version != 5 {
         unimplemented(
             fmt.tprintf("Unsupported version %d in '%s'", header.version, machine.romfile)
         )
@@ -202,10 +241,18 @@ initialise_machine :: proc(machine: ^Machine) {
     })
     // FIXME set various bits and stuff in header
 
-    if header.version <= 3 {
-        if !machine.config.status do add_flag1_v3(machine, {.status_unavail})
-        if machine.config.screen_split do add_flag1_v3(machine, {.screen_split})
+    _initilise_machine_flags1(machine)
+    _initilise_machine_flags2(machine)
+
+    if header.version >= 4 {
+        header.interpreter_num = Interpreter.IBM_PC
+        header.interpreter_version = 0
     }
+
+    if header.version >= 5 && header.extension != 0 do unimplemented()
+
+    // Adhere's to Standard 1.1
+    header.revision = 0x101
 
     if machine.config.alternate_screen {
         fmt.print("\e[?1049h")
@@ -214,6 +261,18 @@ initialise_machine :: proc(machine: ^Machine) {
     if !is_tty() do return
     // FIXME handle signals to detect change in size
     machine.screen.width, machine.screen.height = get_term_size()
+    if header.version >= 4 {
+        header.screen_width = u8(machine.screen.width)
+        header.screen_height = u8(machine.screen.height)
+    }
+    if header.version >= 5 {
+        header.screen_width_px = u16be(header.screen_width)
+        header.screen_height_px = u16be(header.screen_height)
+        header.font1 = 1
+        header.font2 = 1
+        header.bgcolor = .BLACK
+        header.fgcolor = .WHITE
+    }
     clear_screen()
     set_cursor(0, machine.screen.height - 1)
 }

@@ -34,7 +34,7 @@ zstring_initialized := false
 zstring_initialize :: proc(machine: ^Machine) {
     header := machine_header(machine)
     if header.version == 1 do unimplemented("diff A2 table")
-    if header.version >= 5 do unimplemented("alphabet tables")
+    if header.version >= 5 && header.alphabet != 0 do unimplemented("alphabet tables")
     zstring_initialized = true
 }
 
@@ -42,7 +42,6 @@ zstring_initialize :: proc(machine: ^Machine) {
 zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
     if !zstring_initialized do zstring_initialize(machine)
     header := machine_header(machine)
-    if header.version != 3 do unimplemented()
     switch zstring.mode {
         case .A0, .A1, .A2:
             switch zchar {
@@ -64,6 +63,7 @@ zstring_process_zchar :: proc(machine: ^Machine, zstring: ^ZString, zchar: u8) {
                     if header.version >= 3 do zstring.mode = .A2
                     else do unimplemented("shift lock")
                 case 6..=31:
+                    if header.version >= 5 && header.alphabet != 0 do unimplemented("alphabet tables")
                     switch zstring.mode {
                         case .A0: fmt.sbprint(zstring.sb, zstring_alphabet_0[zchar - 6])
                         case .A1:
@@ -188,7 +188,7 @@ zstring_output_zscii :: proc(machine: ^Machine, char: u16) -> string {
 zstring_encode_zchars :: proc(machine: ^Machine, word: string, zchars_ptr: ^[]u8) {
     header := machine_header(machine)
     if header.version <= 2 do unimplemented()
-    if header.version >= 5 do unimplemented("alphabet tables")
+    if header.version >= 5 && header.alphabet != 0 do unimplemented("alphabet tables")
 
     assert(zchars_ptr != nil)
     length := len(zchars_ptr^)

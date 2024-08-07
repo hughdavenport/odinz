@@ -2,6 +2,46 @@ package odinz
 
 import "core:fmt"
 
+// https://zspec.jaredreisinger.com/11-header#11_1_3
+Interpreter :: enum u8 {
+    UNKNOWN,
+    DEC_SYSTEM_20,
+    APPLE_IIE,
+    MACINTOSH,
+    AMIGA,
+    ATARI_ST,
+    IBM_PC,
+    COMMODORE_128,
+    COMMODORE_64,
+    APPLE_IIC,
+    APPLE_IIGS,
+    TANDY_COLOUR,
+    NUM_INTERPRETERS
+}
+#assert(u8(Interpreter.NUM_INTERPRETERS) == 12)
+
+// https://zspec.jaredreisinger.com/08-screen#8_3_1
+Color :: enum u8 {
+    CURRENT,
+    DEFAULT,
+    BLACK,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE,
+    LIGHT_GREY,
+    MEDIUM_GREY,
+    DARK_GREY,
+    _RESERVED1,
+    _RESERVED2,
+    TRANSPARENT,
+    PIXEL,
+}
+
+// https://zspec.jaredreisinger.com/11-header
 Header :: struct {
     version: u8 `fmt:"x"`,
     flags1: u8 `fmt:"b"`,
@@ -17,8 +57,34 @@ Header :: struct {
     abbreviations: u16be `fmt:"x"`,
     length: u16be `fmt:"x"`,
     checksum: u16be `fmt:"x"`,
+    interpreter_num: Interpreter `fmt:"d"`,
+    interpreter_version: u8 `fmt:"d"`,
+    screen_height: u8 `fmt:"d"`,
+    screen_width: u8 `fmt:"d"`,
+    screen_width_px: u16be `fmt:"d"`,
+    screen_height_px: u16be `fmt:"d"`,
+    font1: u8 `fmt:"d"`,
+    font2: u8 `fmt:"d"`,
+    routines: u16be `fmt:"x"`,
+    strings: u16be `fmt:"x"`,
+    bgcolor: Color `fmt:"d"`,
+    fgcolor: Color `fmt:"d"`,
+    terminating: u16be `fmt:"x"`,
+    stream3_width: u16be `fmt:"x"`,
+    revision: u16be `fmt:"x"`,
+    alphabet: u16be `fmt:"x"`,
+    extension: u16be `fmt:"x"`,
+}
+#assert(size_of(Header) == 0x38)
 
-    // TODO rest of header defined in 4+
+header_font_width :: proc(header: ^Header) -> u8 {
+    if header.version >= 6 do return header.font2
+    else do return header.font1
+}
+
+header_font_height :: proc(header: ^Header) -> u8 {
+    if header.version >= 6 do return header.font1
+    else do return header.font2
 }
 
 Flags1_V3 :: bit_set[enum {
@@ -32,7 +98,6 @@ Flags1_V3 :: bit_set[enum {
     _unused2,
 }; u8]
 
-@(private="file")
 Flags1_V4 :: bit_set[enum {
     colors,     // V5
     pictures,   // V6
@@ -44,7 +109,6 @@ Flags1_V4 :: bit_set[enum {
     timed,
 }; u8]
 
-@(private="file")
 Flags2 :: bit_set[enum {
     transcript,     // V1
     forced_mono,    // V3

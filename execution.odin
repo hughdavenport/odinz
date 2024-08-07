@@ -73,12 +73,12 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
 
     lexer_analyse(machine, text, parse)
 
-    if header.version >= 5 do unimplemented("store")
+    if header.version >= 5 do machine_write_variable(machine, u16(instruction.store), u16(ret))
 }
 
 execute :: proc(machine: ^Machine) {
     header := machine_header(machine)
-    if header.version != 3 {
+    if header.version != 3 && header.version != 5 {
         unimplemented(
             fmt.tprintf("Unsupported version %d in '%s'", machine.memory[0], machine.romfile)
         )
