@@ -54,13 +54,20 @@ status_line :: proc(machine: ^Machine) {
 read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     // https://zspec.jaredreisinger.com/15-opcodes#read
     header := machine_header(machine)
-    assert(len(instruction.operands) >= 2)
+    // NOTE: Spec lists 2 operands or 4
+    //          However, TerpEtude has "READ L00" and "READ L01"
+    //          Default to 0
+    assert(len(instruction.operands) >= 1)
+
     if header.version >= 5 do assert(instruction.has_store)
     else do assert(!instruction.has_store)
     text := u32(machine_read_operand(machine, &instruction.operands[0]))
-    parse := u32(machine_read_operand(machine, &instruction.operands[1]))
     assert(text != 0)
-    assert(parse != 0)
+
+    // NOTE: Spec lists 2 operands or 4
+    //          However, TerpEtude has "READ L00" and "READ L01"
+    //          Default to 0
+    parse := len(instruction.operands) > 1 ? u32(machine_read_operand(machine, &instruction.operands[1])) : 0
 
     if header.version >= 1 && header.version <= 3 do status_line(machine)
 
@@ -71,7 +78,7 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
         if time != 0 && routine != 0 do unimplemented("timed reads")
     }
 
-    lexer_analyse(machine, text, parse)
+    ret := lexer_analyse(machine, text, parse)
 
     if header.version >= 5 do machine_write_variable(machine, u16(instruction.store), u16(ret))
 }

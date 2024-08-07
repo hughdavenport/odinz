@@ -11,13 +11,14 @@ LexedBlock :: struct {
     index: u8,
 }
 
-lexer_read :: proc(machine: ^Machine, text: u32) -> string {
+lexer_read :: proc(machine: ^Machine, text: u32) -> (ret: string, terminating: u8) {
     // https://zspec.jaredreisinger.com/15-opcodes#read
     header := machine_header(machine)
     length := machine_read_byte(machine, text)
     data: []u8 = { 0 }
     done := u32(0)
     if header.version >= 5 {
+        if header.terminating != 0 do unimplemented()
         done = u32(machine_read_byte(machine, text + 1))
         if done != 0 do unimplemented("Reading left over text")
         done += 1
@@ -26,6 +27,7 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
     for {
         if done == u32(length) {
             if header.version < 5 do machine_write_byte(machine, text + done + 1, 0)
+            terminating = '\n'
             break
         }
 
@@ -34,8 +36,11 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
             unreachable("IO error")
         }
 
+        if header.version >= 5 && header.terminating != 0 do unimplemented()
+
         if data[0] == '\n' {
             if header.version < 5 do machine_write_byte(machine, text + done + 1, 0)
+            terminating = '\n'
             break
         } else {
             c := data[0]
@@ -50,9 +55,9 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> string {
     }
 
     if header.version >= 5 {
-        return strings.clone_from(machine.memory[text+2:][:done])
+        return strings.clone_from(machine.memory[text+2:][:done]), terminating
     } else {
-        return strings.clone_from(machine.memory[text+1:][:done])
+        return strings.clone_from(machine.memory[text+1:][:done]), terminating
     }
 }
 
@@ -93,15 +98,16 @@ lexer_split :: proc(machine: ^Machine, input: string, limit: u8) -> [dynamic]Lex
     return ret
 }
 
-lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
+lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) -> u8 {
     // https://zspec.jaredreisinger.com/15-opcodes#read
     // https://zspec.jaredreisinger.com/13-dictionary#13_6
     // https://zspec.jaredreisinger.com/03-text#3_7
     header := machine_header(machine)
-    if header.version >= 5 && parse == 0 do return
 
-    input := lexer_read(machine, text)
+    input, terminating := lexer_read(machine, text)
     defer delete(input)
+    if header.version >= 5 && parse == 0 do return terminating
+
     limit := machine_read_byte(machine, parse)
     blocks := lexer_split(machine, input, limit)
     defer delete(blocks)
@@ -119,4 +125,5 @@ lexer_analyse :: proc(machine: ^Machine, text: u32, parse: u32) {
         machine_write_byte(machine, parse_entry + 3, block.index + 1)
         parse_entry += 4
     }
+    return terminating
 }
