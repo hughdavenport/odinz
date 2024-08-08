@@ -25,7 +25,7 @@ dictionary_search :: proc(machine: ^Machine, search: []u16) -> u32 {
     n := u32(machine_read_byte(machine, dictionary))
     length := u32(machine_read_byte(machine, dictionary + n + 1))
     count := u32(machine_read_word(machine, dictionary + n + 2))
-    assert(int(count) > len(search) * 2)
+    assert(int(length) > len(search) * 2)
     entries := dictionary + n + 4
 
     index := dictionary_search_chop(machine, entries, length, search, 0, count)

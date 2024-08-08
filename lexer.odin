@@ -55,7 +55,7 @@ lexer_read :: proc(machine: ^Machine, text: u32) -> (ret: string, terminating: u
     }
 
     if header.version >= 5 {
-        return strings.clone_from(machine.memory[text+2:][:done]), terminating
+        return strings.clone_from(machine.memory[text+2:][:done - 1]), terminating
     } else {
         return strings.clone_from(machine.memory[text+1:][:done]), terminating
     }
