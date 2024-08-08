@@ -314,9 +314,11 @@ execute :: proc(machine: ^Machine) {
                 assert(instruction.has_store)
                 assert(instruction.has_branch)
                 object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
                 result: u16
-                #partial switch instruction.opcode {
+                // NOTE: Not listed in spec on how to use object 0
+                //          However, strictz.z5 requires this to succeed
+                if object == 0 do result = 0
+                else do #partial switch instruction.opcode {
                     case .GET_CHILD: result = object_child(machine, object)
                     case .GET_SIBLING: result = object_sibling(machine, object)
                     case: unreachable()
@@ -387,9 +389,12 @@ execute :: proc(machine: ^Machine) {
                 assert(instruction.has_store)
                 assert(!instruction.has_branch) // No branch on this instruction
                 object := machine_read_operand(machine, &instruction.operands[0])
-                assert(object != 0)
-                parent := object_parent(machine, object)
-                machine_write_variable(machine, u16(instruction.store), parent)
+                // NOTE: Not listed in spec on how to use object 0
+                //          However, strictz.z5 requires this to succeed
+                result: u16
+                if object == 0 do result = 0
+                else do result = object_parent(machine, object)
+                machine_write_variable(machine, u16(instruction.store), result)
 
             case .INSERT_OBJ:
                 // https://zspec.jaredreisinger.com/15-opcodes#insert_obj
