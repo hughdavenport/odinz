@@ -281,7 +281,7 @@ initialise_machine :: proc(machine: ^Machine) {
     }
 
     if header.version >= 5 && header.extension != 0 {
-        debug("unimplented header extension ignored")
+        // FIXME header extension
         // unimplemented()
     }
 
