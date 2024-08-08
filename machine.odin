@@ -223,26 +223,22 @@ machine_read_operand :: proc(machine: ^Machine, operand: ^Operand) -> u16 {
 _initilise_machine_flags1 :: proc(machine: ^Machine) {
     header := machine_header(machine)
     if header.version <= 3 {
-        flags := transmute(Flags1_V3)header.flags1
-        flags -= {.status_unavail, .screen_split, .variable_font}
-        if !machine.config.status do flags += {.status_unavail}
-        if machine.config.screen_split do flags += {.screen_split}
+        header.flags1.v3 -= {.status_unavail, .screen_split, .variable_font}
+        if !machine.config.status do header.flags1.v3 += {.status_unavail}
+        if machine.config.screen_split do header.flags1.v3 += {.screen_split}
         // FIXME add a config option
-        if false do flags += {.variable_font}
-        header.flags1 = transmute(u8)flags
+        if false do header.flags1.v3 += {.variable_font}
     } else {
-        flags1 := transmute(Flags1_V4)header.flags1
-        flags1 = {}
+        header.flags1.v4 = {}
         // FIXME add config options
-        if header.version >= 6 && false do flags1 += {.pictures}
-        if header.version >= 6 && false do flags1 += {.sounds}
-        if false do flags1 += {.timed}
+        if header.version >= 6 && false do header.flags1.v4 += {.pictures}
+        if header.version >= 6 && false do header.flags1.v4 += {.sounds}
+        if false do header.flags1.v4 += {.timed}
         // FIXME add config options, or detect based on term?
-        if header.version >= 5 && false do flags1 += {.colors}
-        if false do flags1 += {.boldface}
-        if false do flags1 += {.italics}
-        if false do flags1 += {.monospace}
-        header.flags1 = transmute(u8)flags1
+        if header.version >= 5 && false do header.flags1.v4 += {.colors}
+        if false do header.flags1.v4 += {.boldface}
+        if false do header.flags1.v4 += {.italics}
+        if false do header.flags1.v4 += {.monospace}
     }
 }
 

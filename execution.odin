@@ -10,7 +10,8 @@ status_line :: proc(machine: ^Machine) {
     // https://zspec.jaredreisinger.com/08-screen#8_2
     header := machine_header(machine)
     if !is_tty() do return
-    flags := transmute(Flags1_V3)header.flags1
+    assert(header.version <= 3)
+    flags := header.flags1.v3
     if .status_unavail in flags do return
 
     x, y := get_cursor()

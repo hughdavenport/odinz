@@ -44,7 +44,7 @@ Color :: enum u8 {
 // https://zspec.jaredreisinger.com/11-header
 Header :: struct {
     version: u8 `fmt:"x"`,
-    flags1: u8 `fmt:"b"`,
+    flags1: Flag1 `fmt:"b"`,
     release: u16be `fmt:"d"`,
     highmem: u16be `fmt:"x"`,
     initialpc: u16be `fmt:"x"`,
@@ -52,7 +52,7 @@ Header :: struct {
     objects: u16be `fmt:"x"`,
     globals: u16be `fmt:"x"`,
     static: u16be `fmt:"x"`,
-    flags2: Flags2 `fmt:"b"`,
+    flags2: Flag2 `fmt:"b"`,
     serial: [6]u8 `fmt:"s"`,
     abbreviations: u16be `fmt:"x"`,
     length: u16be `fmt:"x"`,
@@ -87,7 +87,9 @@ header_font_height :: proc(header: ^Header) -> u8 {
     else do return header.font2
 }
 
-Flags1_V3 :: bit_set[enum {
+Flag1 :: struct #raw_union { v3: Flag1_V3, v4: Flag1_V4 }
+
+Flag1_V3 :: bit_set[enum {
     _unused1,
     status_time,
     split,
@@ -98,7 +100,7 @@ Flags1_V3 :: bit_set[enum {
     _unused2,
 }; u8]
 
-Flags1_V4 :: bit_set[enum {
+Flag1_V4 :: bit_set[enum {
     colors,     // V5
     pictures,   // V6
     boldface,
@@ -109,7 +111,7 @@ Flags1_V4 :: bit_set[enum {
     timed,
 }; u8]
 
-Flags2 :: bit_set[enum {
+Flag2 :: bit_set[enum {
     transcript,     // V1
     forced_mono,    // V3
     redraw,         // V6
@@ -130,7 +132,7 @@ header_flags1_print :: proc(header: ^Header) {
     case 1, 2:
         // No flags in these versions. Implicit break in Odin
     case 3:
-        flags := transmute(Flags1_V3)header.flags1
+        flags := header.flags1.v3
         if .status_time in flags {
             fmt.print("Display hours:minutes")
         } else {
@@ -153,7 +155,7 @@ header_flags1_print :: proc(header: ^Header) {
 @(private="file")
 header_flags2_print :: proc(header: ^Header) {
     print_comma := false
-    flags := transmute(Flags2)header.flags2
+    flags := header.flags2
     switch (header.version) {
         // Go from highest to lowest, add new bit in that version, then *fallthrough*
     case 6, 7, 8:
