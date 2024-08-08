@@ -279,7 +279,12 @@ execute :: proc(machine: ^Machine) {
                     #partial switch instruction.opcode {
                         case .JL: jump_condition = i16(a) < i16(b)
                         case .JG: jump_condition = i16(a) > i16(b)
-                        case .JIN: jump_condition = object_parent(machine, a) == b
+                        case .JIN:
+                            // NOTE: Not listed in spec on how to use object 0
+                            //          However, strictz.z5 requires these checks to succeed
+                            if a == 0 && b == 0 do jump_condition = true
+                            else if a == 0 do jump_condition = false
+                            else do jump_condition = object_parent(machine, a) == b
                         case .TEST: jump_condition = a & b == b
                         case .TEST_ATTR:
                             assert(a != 0)
