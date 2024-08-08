@@ -98,28 +98,36 @@ machine_write_header :: proc(machine: ^Machine, address: u32, value: u8) {
         unreachable("Illegal write to header address 0x%02x", address)
     }
     header := machine_header(machine)
-    flag: Flags2 = {.transcript, .forced_mono, .redraw}
-    if address == 0x10 do flag &= transmute(Flags2)u16(value)
-    if address == 0x11 do flag &= transmute(Flags2)(u16(value) << 8)
+    full_value: u16be
+    if address == 0x10 do full_value = (u16be(value) << 8) | (transmute(u16be)header.flags2 & 0xff)
+    if address == 0x11 do full_value = u16be(value) | (transmute(u16be)header.flags2 & 0xff00)
+    flag := transmute(Flag2)full_value
 
-    if (address == 0x10 && u8(transmute(u16)flag) != value) ||
-            (address == 0x11 && u8(transmute(u16)flag >> 8) != value) {
-        unreachable("Illegal write to header flag 2 with these immutable flags set: %v", flag)
+    diff := (flag - header.flags2) | (header.flags2 - flag)
+    if diff - {.transcript, .forced_mono, .redraw} != {} {
+        unreachable("Illegal write to header flag 2 @ 0x%02x, value = %08b\nchanging these immutable flags: %w\ncurrent = %w\nnew = %w",
+            address, value, diff, header.flags2, flag)
     }
 
     if (flag & {.transcript}) != (header.flags2 & {.transcript}) {
+        if .write in machine.config.trace do fmt.printfln("WRITE header flag2 transcript %v", .transcript in flag)
         unimplemented()
     }
 
     if (flag & {.forced_mono}) != (header.flags2 & {.forced_mono}) {
         if header.version < 3 do unreachable()
+        if .write in machine.config.trace do fmt.printfln("WRITE header flag2 forced monospace %v", .transcript in flag)
         unimplemented()
     }
 
     if (flag & {.redraw}) != (header.flags2 & {.redraw}) {
         if header.version < 6 do unreachable()
+        if .write in machine.config.trace do fmt.printfln("WRITE header flag2 redraw %v", .transcript in flag)
         // This is in response to interpreter asking, so don't care
     }
+
+    if flag != header.flags2 do fmt.printfln("WRITE header flag2 %w -> %w", header.flags2, flag)
+    header.flags2 = flag
 }
 
 machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
@@ -133,7 +141,7 @@ machine_write_byte :: proc(machine: ^Machine, address: u32, value: u8) {
 }
 
 machine_write_word :: proc(machine: ^Machine, address: u32, value: u16) {
-    if .write in machine.config.trace {
+    if address > 0x40 && .write in machine.config.trace {
         machine.config.trace &= ~{.write}
         defer machine.config.trace |= {.write}
         fmt.printfln("WRITE @ 0x%04x: 0x%04x", address, value)
