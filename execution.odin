@@ -504,12 +504,34 @@ execute :: proc(machine: ^Machine) {
                 delete_frame(current_frame)
                 continue
 
+            case .OUTPUT_STREAM:
+                // https://zspec.jaredreisinger.com/15-opcodes#output_stream
+                // https://zspec.jaredreisinger.com/07-output
+                assert(len(instruction.operands) >= 1)
+                stream := i16(machine_read_operand(machine, &instruction.operands[0]))
+                assert(stream >= -4 && stream <= 4)
+                if stream == 0 do continue
+                if stream == 3 {
+                    assert(len(instruction.operands) >= 2)
+                    unimplemented("Store in buffer")
+                    // 7.1.2.1, buffers can stack up to 16 deep
+                    // 7.1.2.2, no other output is sent while 3 is on
+                }
+                if header.version == 6 && len(instruction.operands) >= 3 {
+                    unimplemented("output width")
+                }
+                if stream < 0 do unimplemented("disable")
+                if stream > 0 do unimplemented("enable")
+
+                unimplemented()
+
 
             // Input
             case .INPUT_STREAM:
                 // https://zspec.jaredreisinger.com/15-opcodes#input_stream
                 // https://zspec.jaredreisinger.com/10-input#10_2
                 assert(len(instruction.operands) == 1)
+                assert(header.version >= 3)
                 stream := machine_read_operand(machine, &instruction.operands[0])
                 switch stream {
                     case 0: unimplemented("Switch to keyboard input")

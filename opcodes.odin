@@ -61,6 +61,7 @@ Opcode :: enum {
     PRINT_ADDR,
     PRINT_PADDR,
     PRINT_RET,
+    OUTPUT_STREAM,
 
     // Input
     INPUT_STREAM, READ,
@@ -98,7 +99,7 @@ var_ops := [?]Opcode{
     0x10 = .UNKNOWN,
     0x11 = .UNKNOWN,
     0x12 = .UNKNOWN,
-    0x13 = .UNKNOWN,
+    0x13 = .OUTPUT_STREAM,
     0x14 = .INPUT_STREAM,
     0x15 = .UNKNOWN,
     0x16 = .UNKNOWN,
@@ -262,6 +263,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
+             .OUTPUT_STREAM,
              .INPUT_STREAM, .READ,
              .PUSH, .PULL, .RET_POPPED,
              .QUIT, .RANDOM, .RESTART, .SHOW_STATUS:
@@ -298,6 +300,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
+             .OUTPUT_STREAM,
              .INPUT_STREAM,
              .PUSH, .RET_POPPED,
              .QUIT, .RESTART, .SHOW_STATUS, .VERIFY:
@@ -327,6 +330,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .STORE, .STOREB, .STOREW,
              .NEW_LINE,
              .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
+             .OUTPUT_STREAM,
              .INPUT_STREAM, .READ,
              .PUSH, .PULL, .RET_POPPED,
              .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
