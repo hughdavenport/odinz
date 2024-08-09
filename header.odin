@@ -216,6 +216,25 @@ header_flags2_print :: proc(header: ^Header) {
 
 }
 
+header_file_length :: proc(header: ^Header) -> int {
+    file_length := int(header.length)
+    switch {
+        case header.version <= 3: file_length *= 2
+        case header.version <= 5: file_length *= 4
+        case: file_length *= 8
+    }
+    return file_length
+}
+
+machine_checksum :: proc(machine: ^Machine) -> u16be {
+    header := machine_header(machine)
+    file_length := header_file_length(header)
+    actual_checksum : u16be = 0
+    if file_length > len(machine.memory) do file_length = len(machine.memory)
+    for num in machine.memory[0x40:file_length] do actual_checksum += u16be(num)
+    return actual_checksum
+}
+
 header_dump :: proc(machine: ^Machine) {
     header := machine_header(machine)
 
@@ -245,21 +264,14 @@ header_dump :: proc(machine: ^Machine) {
     fmt.printfln("%-26s%s", "Serial number:", header.serial)
     fmt.printfln("%-26s%04x", "Abbreviations address:", header.abbreviations)
 
-    file_length := int(header.length)
-    switch {
-    case header.version <= 3: file_length *= 2
-    case header.version <= 5: file_length *= 4
-    case: file_length *= 8
-    }
+    file_length := header_file_length(header)
     if len(machine.memory) != file_length {
         fmt.printfln("%-26s%04x (%04x)", "File size (actual):", file_length, len(machine.memory))
     } else {
         fmt.printfln("%-26s%04x", "File size:", file_length)
     }
 
-    actual_checksum : u16be = 0
-    if file_length > len(machine.memory) do file_length = len(machine.memory)
-    for num in machine.memory[0x40:file_length] do actual_checksum += u16be(num)
+    actual_checksum := machine_checksum(machine)
     if actual_checksum != header.checksum {
         fmt.printfln("%-26s%04x (%04x)", "Checksum (actual):", header.checksum, actual_checksum)
     } else {

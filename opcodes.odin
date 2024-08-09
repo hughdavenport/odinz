@@ -70,9 +70,10 @@ Opcode :: enum {
     RET_POPPED,
 
     // Misc
+    QUIT,
     RANDOM,
     SHOW_STATUS,
-    QUIT,
+    VERIFY,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -126,7 +127,7 @@ zero_ops := [?]Opcode{
     0x0A = .QUIT,
     0x0B = .NEW_LINE,
     0x0C = .SHOW_STATUS,
-    0x0D = .UNKNOWN,
+    0x0D = .VERIFY,
     0x0E = .UNKNOWN,
     0x0F = .UNKNOWN,
 }
@@ -240,7 +241,8 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
              .JZ, .JL, .JE, .JG, .JIN,
-             .TEST, .TEST_ATTR, .GET_CHILD, .GET_SIBLING:
+             .TEST, .TEST_ATTR, .GET_CHILD, .GET_SIBLING,
+             .VERIFY:
                  return true
 
         // Instruction does not need to branch
@@ -262,9 +264,9 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .READ,
              .PUSH, .PULL,
              .RET_POPPED,
+             .QUIT,
              .RANDOM,
-             .SHOW_STATUS,
-             .QUIT:
+             .SHOW_STATUS:
         // Instruction does not need to branch
     }
     return false
@@ -300,8 +302,9 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .PRINT_RET,
              .PUSH,
              .RET_POPPED,
+             .QUIT,
              .SHOW_STATUS,
-             .QUIT:
+             .VERIFY:
         // Instruction does not need to store
     }
     return false
@@ -331,9 +334,10 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .READ,
              .PUSH, .PULL,
              .RET_POPPED,
+             .QUIT,
              .RANDOM,
              .SHOW_STATUS,
-             .QUIT:
+             .VERIFY:
         // Instruction does not need a zstring
     }
     return false

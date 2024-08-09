@@ -541,6 +541,10 @@ execute :: proc(machine: ^Machine) {
 
 
             // Misc
+            case .QUIT:
+                // https://zspec.jaredreisinger.com/15-opcodes#quit
+                return
+
             case .RANDOM:
                 // https://zspec.jaredreisinger.com/15-opcodes#random
                 assert(len(instruction.operands) == 1)
@@ -563,9 +567,13 @@ execute :: proc(machine: ^Machine) {
                 }
                 status_line(machine)
 
-            case .QUIT:
-                // https://zspec.jaredreisinger.com/15-opcodes#quit
-                return
+            case .VERIFY:
+                // https://zspec.jaredreisinger.com/15-opcodes#verify
+                if header.version != 3 {
+                    debug("VERIFY is undefined for version %d. nop", header.version)
+                    continue
+                }
+                jump_condition = machine_checksum(machine) != header.checksum
 
         } // switch instruction.opcode
 
