@@ -79,6 +79,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .READ,
              .PUSH, .RET_POPPED,
              .RANDOM,
+             .SHOW_STATUS,
              .QUIT:
             operands_dump(instruction.operands[:])
 

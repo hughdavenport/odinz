@@ -552,6 +552,17 @@ execute :: proc(machine: ^Machine) {
                 else do ret = (u16(rand.uint32()) % u16(range)) + 1
                 machine_write_variable(machine, u16(instruction.store), ret)
 
+            case .SHOW_STATUS:
+                // https://zspec.jaredreisinger.com/15-opcodes#random
+                // NOTE: Spec lists version 3 only
+                //          However, Wishbringer accidently contains it
+                //          Default to no-op
+                if header.version != 3 {
+                    debug("SHOW_STATUS is undefined for version %d. nop", header.version)
+                    continue
+                }
+                status_line(machine)
+
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
                 return

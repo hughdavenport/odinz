@@ -71,6 +71,7 @@ Opcode :: enum {
 
     // Misc
     RANDOM,
+    SHOW_STATUS,
     QUIT,
 }
 
@@ -124,7 +125,7 @@ zero_ops := [?]Opcode{
     0x09 = .UNKNOWN,
     0x0A = .QUIT,
     0x0B = .NEW_LINE,
-    0x0C = .UNKNOWN,
+    0x0C = .SHOW_STATUS,
     0x0D = .UNKNOWN,
     0x0E = .UNKNOWN,
     0x0F = .UNKNOWN,
@@ -262,6 +263,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .PUSH, .PULL,
              .RET_POPPED,
              .RANDOM,
+             .SHOW_STATUS,
              .QUIT:
         // Instruction does not need to branch
     }
@@ -298,6 +300,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .PRINT_RET,
              .PUSH,
              .RET_POPPED,
+             .SHOW_STATUS,
              .QUIT:
         // Instruction does not need to store
     }
@@ -329,6 +332,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .PUSH, .PULL,
              .RET_POPPED,
              .RANDOM,
+             .SHOW_STATUS,
              .QUIT:
         // Instruction does not need a zstring
     }
