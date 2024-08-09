@@ -556,6 +556,12 @@ execute :: proc(machine: ^Machine) {
                 else do ret = (u16(rand.uint32()) % u16(range)) + 1
                 machine_write_variable(machine, u16(instruction.store), ret)
 
+            case .RESTART:
+                // https://zspec.jaredreisinger.com/15-opcodes#restart
+                restart_machine(machine)
+                header = machine_header(machine)
+                continue
+
             case .SHOW_STATUS:
                 // https://zspec.jaredreisinger.com/15-opcodes#random
                 // NOTE: Spec lists version 3 only

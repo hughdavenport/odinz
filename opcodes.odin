@@ -72,6 +72,7 @@ Opcode :: enum {
     // Misc
     QUIT,
     RANDOM,
+    RESTART,
     SHOW_STATUS,
     VERIFY,
 }
@@ -121,7 +122,7 @@ zero_ops := [?]Opcode{
     0x04 = .UNKNOWN,
     0x05 = .UNKNOWN,
     0x06 = .UNKNOWN,
-    0x07 = .UNKNOWN,
+    0x07 = .RESTART,
     0x08 = .RET_POPPED,
     0x09 = .UNKNOWN,
     0x0A = .QUIT,
@@ -262,11 +263,8 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
              .READ,
-             .PUSH, .PULL,
-             .RET_POPPED,
-             .QUIT,
-             .RANDOM,
-             .SHOW_STATUS:
+             .PUSH, .PULL, .RET_POPPED,
+             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS:
         // Instruction does not need to branch
     }
     return false
@@ -300,11 +298,8 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
-             .PUSH,
-             .RET_POPPED,
-             .QUIT,
-             .SHOW_STATUS,
-             .VERIFY:
+             .PUSH, .RET_POPPED,
+             .QUIT, .RESTART, .SHOW_STATUS, .VERIFY:
         // Instruction does not need to store
     }
     return false
@@ -332,12 +327,8 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .READ,
-             .PUSH, .PULL,
-             .RET_POPPED,
-             .QUIT,
-             .RANDOM,
-             .SHOW_STATUS,
-             .VERIFY:
+             .PUSH, .PULL, .RET_POPPED,
+             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
         // Instruction does not need a zstring
     }
     return false

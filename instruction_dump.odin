@@ -78,10 +78,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_ADDR, .PRINT_PADDR,
              .READ,
              .PUSH, .RET_POPPED,
-             .QUIT,
-             .RANDOM,
-             .SHOW_STATUS,
-             .VERIFY:
+             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
             operands_dump(instruction.operands[:])
 
         case .CALL, .CALL_1N, .CALL_VN:

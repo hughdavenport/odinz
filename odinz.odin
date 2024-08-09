@@ -121,8 +121,8 @@ main :: proc() {
 
     data, ok := os.read_entire_file(romfile)
     if !ok do error(fmt.tprintf("Could not read '%s'", romfile), EXIT_CODE.io_error)
-    defer delete(data)
     machine := &Machine{romfile=romfile, memory=data, config=config}
+    defer delete_machine(machine)
     initialise_machine(machine)
     execute(machine)
 }
