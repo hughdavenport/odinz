@@ -506,6 +506,17 @@ execute :: proc(machine: ^Machine) {
 
 
             // Input
+            case .INPUT_STREAM:
+                // https://zspec.jaredreisinger.com/15-opcodes#input_stream
+                // https://zspec.jaredreisinger.com/10-input#10_2
+                assert(len(instruction.operands) == 1)
+                stream := machine_read_operand(machine, &instruction.operands[0])
+                switch stream {
+                    case 0: unimplemented("Switch to keyboard input")
+                    case 1: unimplemented("Switch to file input")
+                    case: debug("Invalid operand INPUT_STREAM: %d", stream)
+                }
+
             case .READ:
                 // https://zspec.jaredreisinger.com/15-opcodes#read
                 read_opcode(machine, &instruction)

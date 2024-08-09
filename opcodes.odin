@@ -63,7 +63,7 @@ Opcode :: enum {
     PRINT_RET,
 
     // Input
-    READ,
+    INPUT_STREAM, READ,
 
     // Stack
     PUSH, PULL,
@@ -99,7 +99,7 @@ var_ops := [?]Opcode{
     0x11 = .UNKNOWN,
     0x12 = .UNKNOWN,
     0x13 = .UNKNOWN,
-    0x14 = .UNKNOWN,
+    0x14 = .INPUT_STREAM,
     0x15 = .UNKNOWN,
     0x16 = .UNKNOWN,
     0x17 = .UNKNOWN,
@@ -262,7 +262,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
-             .READ,
+             .INPUT_STREAM, .READ,
              .PUSH, .PULL, .RET_POPPED,
              .QUIT, .RANDOM, .RESTART, .SHOW_STATUS:
         // Instruction does not need to branch
@@ -298,6 +298,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .NEW_LINE,
              .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
              .PRINT_RET,
+             .INPUT_STREAM,
              .PUSH, .RET_POPPED,
              .QUIT, .RESTART, .SHOW_STATUS, .VERIFY:
         // Instruction does not need to store
@@ -326,7 +327,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .STORE, .STOREB, .STOREW,
              .NEW_LINE,
              .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
-             .READ,
+             .INPUT_STREAM, .READ,
              .PUSH, .PULL, .RET_POPPED,
              .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
         // Instruction does not need a zstring

@@ -76,7 +76,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .LOADB, .LOADW,
              .STOREB, .STOREW,
              .NEW_LINE, .PRINT_CHAR, .PRINT_NUM, .PRINT_ADDR, .PRINT_PADDR,
-             .READ,
+             .INPUT_STREAM, .READ,
              .PUSH, .RET_POPPED,
              .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
             operands_dump(instruction.operands[:])
