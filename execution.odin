@@ -58,7 +58,9 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     // NOTE: Spec lists 2 operands or 4
     //          However, TerpEtude has "READ L00" and "READ L01"
     //          Default to 0
-    assert(len(instruction.operands) >= 1)
+    argc := len(instruction.operands)
+    assert(argc >= 1)
+    if argc != 2 && (header.version >= 4 && argc != 4) do debug("Invalid number of operands given: %d", argc)
 
     if header.version >= 5 do assert(instruction.has_store)
     else do assert(!instruction.has_store)
@@ -68,12 +70,13 @@ read_opcode :: proc(machine: ^Machine, instruction: ^Instruction) {
     // NOTE: Spec lists 2 operands or 4
     //          However, TerpEtude has "READ L00" and "READ L01"
     //          Default to 0
-    parse := len(instruction.operands) > 1 ? u32(machine_read_operand(machine, &instruction.operands[1])) : 0
+    if argc < 2 do debug("Using 0 as the 2nd operand")
+    parse := argc > 1 ? u32(machine_read_operand(machine, &instruction.operands[1])) : 0
 
     if header.version >= 1 && header.version <= 3 do status_line(machine)
 
-    if header.version >= 4 && len(instruction.operands) > 2 {
-        assert(len(instruction.operands) == 4)
+    if header.version >= 4 && argc > 2 {
+        assert(argc == 4)
         time := machine_read_operand(machine, &instruction.operands[2])
         routine := machine_read_operand(machine, &instruction.operands[3])
         if time != 0 && routine != 0 do unimplemented("timed reads")
@@ -282,6 +285,7 @@ execute :: proc(machine: ^Machine) {
                         case .JIN:
                             // NOTE: Not listed in spec on how to use object 0
                             //          However, strictz.z5 requires these checks to succeed
+                            if a == 0 do debug("Invalid use of object 0")
                             if a == 0 && b == 0 do jump_condition = true
                             else if a == 0 do jump_condition = false
                             else do jump_condition = object_parent(machine, a) == b
@@ -317,6 +321,7 @@ execute :: proc(machine: ^Machine) {
                 result: u16
                 // NOTE: Not listed in spec on how to use object 0
                 //          However, strictz.z5 requires this to succeed
+                if object == 0 do debug("Invalid use of object 0")
                 if object == 0 do result = 0
                 else do #partial switch instruction.opcode {
                     case .GET_CHILD: result = object_child(machine, object)
@@ -391,6 +396,7 @@ execute :: proc(machine: ^Machine) {
                 object := machine_read_operand(machine, &instruction.operands[0])
                 // NOTE: Not listed in spec on how to use object 0
                 //          However, strictz.z5 requires this to succeed
+                if object == 0 do debug("Invalid use of object 0")
                 result: u16
                 if object == 0 do result = 0
                 else do result = object_parent(machine, object)
