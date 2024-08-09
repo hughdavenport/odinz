@@ -15,7 +15,7 @@ Trace :: bit_set[enum {
 
 Config :: struct {
     trace: Trace,
-    status: bool,
+    status_off: bool,
     screen_split: bool,
     alternate_screen: bool,
 }
@@ -232,7 +232,7 @@ _initilise_machine_flags1 :: proc(machine: ^Machine) {
     header := machine_header(machine)
     if header.version <= 3 {
         header.flags1.v3 -= {.status_unavail, .screen_split, .variable_font}
-        if !machine.config.status do header.flags1.v3 += {.status_unavail}
+        if machine.config.status_off do header.flags1.v3 += {.status_unavail}
         if machine.config.screen_split do header.flags1.v3 += {.screen_split}
         // FIXME add a config option
         if false do header.flags1.v3 += {.variable_font}

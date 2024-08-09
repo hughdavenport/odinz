@@ -25,7 +25,7 @@ usage_and_exit :: proc(progname: string) -> ! {
     fmt.eprintln("    -ti|--trace=instruction        Enable tracing of each instruction")
     fmt.eprintln("    -tr|--trace=read               Enable tracing of all reads")
     fmt.eprintln("    -tw|--trace=write              Enable tracing of all writes")
-    fmt.eprintln("    -sl|--status-line              Enable status line (V1-3)")
+    fmt.eprintln("    -nl|--no-status-line           Disable status line (V1-3)")
     fmt.eprintln("    -ss|--screen-split             Enable screen splitting (V1-3)")
     fmt.eprintln("    -as|--alternate-screen         Enable alternate screen")
     fmt.eprintln("    -s[=num]|--seed[=num] [num]    Set random number initial seed")
@@ -91,7 +91,7 @@ check_args :: proc(progname: string, args: ^[]string, config: ^Config) {
             case "-ti", "--trace=instruction": config^.trace |= {.instruction}
             case "-tr", "--trace=read": config^.trace |= {.read}
             case "-tw", "--trace=write": config^.trace |= {.write}
-            case "-sl", "--status-line": config^.status = true
+            case "-nl", "--no-status-line": config^.status_off = true
             case "-ss", "--screen-split": config^.screen_split = true
             case "-as", "--alternative-screen": config^.alternate_screen = true
             case "-ps", "--print-seed":
