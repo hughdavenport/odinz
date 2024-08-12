@@ -3,6 +3,7 @@ roms
 
 # Built binary
 odinz
+src.bin
 
 # Debug file
 machine.dump
