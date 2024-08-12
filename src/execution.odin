@@ -513,15 +513,15 @@ execute :: proc(machine: ^Machine) {
                 if stream == 0 do continue
                 if stream == 3 {
                     assert(len(instruction.operands) >= 2)
-                    unimplemented("Store in buffer")
+                    unimplemented("Store stream in buffer")
                     // 7.1.2.1, buffers can stack up to 16 deep
                     // 7.1.2.2, no other output is sent while 3 is on
                 }
                 if header.version == 6 && len(instruction.operands) >= 3 {
-                    unimplemented("output width")
+                    unimplemented("output stream width")
                 }
-                if stream < 0 do unimplemented("disable")
-                if stream > 0 do unimplemented("enable")
+                if stream < 0 do unimplemented("disable output stream")
+                if stream > 0 do unimplemented("enable output stream")
 
                 unimplemented()
 
