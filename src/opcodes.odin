@@ -74,6 +74,7 @@ Opcode :: enum {
     QUIT,
     RANDOM,
     RESTART,
+    RESTORE,
     SHOW_STATUS,
     VERIFY,
 }
@@ -122,7 +123,7 @@ zero_ops := [?]Opcode{
     0x03 = .PRINT_RET,
     0x04 = .UNKNOWN,
     0x05 = .UNKNOWN,
-    0x06 = .UNKNOWN,
+    0x06 = .RESTORE,
     0x07 = .RESTART,
     0x08 = .RET_POPPED,
     0x09 = .UNKNOWN,
@@ -239,6 +240,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 }
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
+    header := machine_header(machine)
     switch opcode {
         case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
@@ -246,6 +248,8 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .TEST, .TEST_ATTR, .GET_CHILD, .GET_SIBLING,
              .VERIFY:
                  return true
+
+        case .RESTORE: if header.version <= 3 do return true
 
         // Instruction does not need to branch
         case .ADD, .SUB, .MUL, .DIV, .MOD,
@@ -287,6 +291,8 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
         case .PULL: if header.version >= 6 do return true
         case .READ: if header.version >= 5 do return true
+
+        case .RESTORE: if header.version >= 4 do return true
 
         // Instruction does not need to store
         case .INC, .INC_CHK, .DEC, .DEC_CHK,
@@ -333,7 +339,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .OUTPUT_STREAM,
              .INPUT_STREAM, .READ,
              .PUSH, .PULL, .RET_POPPED,
-             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
+             .QUIT, .RANDOM, .RESTART, .RESTORE, .SHOW_STATUS, .VERIFY:
         // Instruction does not need a zstring
     }
     return false

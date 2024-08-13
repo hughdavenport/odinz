@@ -79,7 +79,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .OUTPUT_STREAM, // FIXME txd shows RECORD_ENABLE, but then #fffc isn't DISABLE
              .INPUT_STREAM, .READ,
              .PUSH, .RET_POPPED,
-             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS, .VERIFY:
+             .QUIT, .RANDOM, .RESTART, .RESTORE, .SHOW_STATUS, .VERIFY:
             operands_dump(instruction.operands[:])
 
         case .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN:
