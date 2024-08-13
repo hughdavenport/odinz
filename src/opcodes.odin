@@ -28,7 +28,7 @@ Opcode :: enum {
     AND, OR,
 
     // Function calling and returning
-    CALL, CALL_1N, CALL_VN,
+    CALL, CALL_1N, CALL_2N, CALL_2S, CALL_VN,
     RET, RFALSE, RTRUE,
     // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
 
@@ -181,8 +181,8 @@ two_ops := [?]Opcode{
     0x16 = .MUL,
     0x17 = .DIV,
     0x18 = .MOD,
-    0x19 = .UNKNOWN,
-    0x1A = .UNKNOWN,
+    0x19 = .CALL_2S,
+    0x1A = .CALL_2N,
     0x1B = .UNKNOWN,
     0x1C = .UNKNOWN,
     0x1D = .UNKNOWN,
@@ -251,7 +251,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .DEC,
              .AND, .OR,
-             .CALL, .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, // This is an odd one out
              .CLEAR_ATTR, .SET_ATTR,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
@@ -278,7 +278,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .AND, .OR,
-             .CALL,
+             .CALL, .CALL_2S,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
              .GET_PARENT, .GET_CHILD, .GET_SIBLING,
              .LOAD, .LOADB, .LOADW,
@@ -290,7 +290,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
         // Instruction does not need to store
         case .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
+             .CALL_1N, .CALL_2N, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
@@ -318,7 +318,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .INC_CHK, .DEC, .DEC_CHK,
              .AND, .OR,
-             .CALL, .CALL_1N, .CALL_VN, .RET, .RFALSE, .RTRUE,
+             .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,
              .CLEAR_ATTR, .SET_ATTR,
