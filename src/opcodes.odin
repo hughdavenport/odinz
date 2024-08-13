@@ -25,7 +25,7 @@ Opcode :: enum {
     DEC, DEC_CHK,
 
     // Bitwise operators
-    AND, OR,
+    AND, OR, NOT,
 
     // Function calling and returning
     CALL, CALL_1N, CALL_2N, CALL_2S, CALL_VN,
@@ -104,7 +104,7 @@ var_ops := [?]Opcode{
     0x15 = .UNKNOWN,
     0x16 = .UNKNOWN,
     0x17 = .UNKNOWN,
-    0x18 = .UNKNOWN,
+    0x18 = .NOT,
     0x19 = .CALL_VN,
     0x1A = .UNKNOWN,
     0x1B = .UNKNOWN,
@@ -250,7 +250,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         // Instruction does not need to branch
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .DEC,
-             .AND, .OR,
+             .AND, .OR, .NOT,
              .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, // This is an odd one out
              .CLEAR_ATTR, .SET_ATTR,
@@ -277,7 +277,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
         case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
         case .ADD, .SUB, .MUL, .DIV, .MOD,
-             .AND, .OR,
+             .AND, .OR, .NOT,
              .CALL, .CALL_2S,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
              .GET_PARENT, .GET_CHILD, .GET_SIBLING,
@@ -317,7 +317,7 @@ opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         // Instruction does not need a zstring
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .AND, .OR,
+             .AND, .OR, .NOT,
              .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
              .JUMP, .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR,

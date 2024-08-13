@@ -69,7 +69,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
     switch instruction.opcode {
         case .UNKNOWN: unreachable("Invalid opcode while dumping instruction")
         case .ADD, .SUB, .MUL, .DIV, .MOD,
-             .AND, .OR,
+             .AND, .OR, .NOT,
              .RET, .RFALSE, .RTRUE,
              .GET_PROP_LEN,
              .JZ, .JL, .JE, .JG, .TEST,
