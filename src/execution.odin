@@ -630,7 +630,10 @@ execute :: proc(machine: ^Machine) {
 
             case .RESTORE:
                 // https://zspec.jaredreisinger.com/15-opcodes#restore
-                if quetzal_restore(machine) do continue
+                if quetzal_restore(machine) {
+                    header = machine_header(machine)
+                    continue
+                }
                 unimplemented("unsuccessful restore")
 
             case .SHOW_STATUS:
