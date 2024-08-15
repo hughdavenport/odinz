@@ -195,6 +195,18 @@ execute :: proc(machine: ^Machine) {
                 a := u16(machine_read_operand(machine, &instruction.operands[0]))
                 machine_write_variable(machine, u16(instruction.store), ~a)
 
+            case .ART_SHIFT:
+                // https://zspec.jaredreisinger.com/15-opcodes#art_shift
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := i16(machine_read_operand(machine, &instruction.operands[0]))
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                value: u16
+                if b < 0 do value = u16(a >> u16(-b))
+                else do value = u16(a << u16(b))
+                machine_write_variable(machine, u16(instruction.store), value)
+
+
             // Function calling and returning
             case .CALL:
                 // https://zspec.jaredreisinger.com/15-opcodes#call
