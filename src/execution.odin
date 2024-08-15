@@ -206,6 +206,21 @@ execute :: proc(machine: ^Machine) {
                 else do value = u16(a << u16(b))
                 machine_write_variable(machine, u16(instruction.store), value)
 
+            case .LOG_SHIFT:
+                // https://zspec.jaredreisinger.com/15-opcodes#log_shift
+                assert(len(instruction.operands) == 2)
+                assert(instruction.has_store)
+                a := machine_read_operand(machine, &instruction.operands[0])
+                b := i16(machine_read_operand(machine, &instruction.operands[1]))
+                value: u16
+                if b < 0 {
+                    sign := (a & 0x8000) >> 15
+                    a &= 0x7fff
+                    value = u16(a >> u16(-b))
+                    value |= sign << u16(15 + b)
+                } else do value = u16(a << u16(b))
+                machine_write_variable(machine, u16(instruction.store), value)
+
 
             // Function calling and returning
             case .CALL:
