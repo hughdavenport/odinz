@@ -15,6 +15,7 @@ OpcodeType :: enum {
 // https://zspec.jaredreisinger.com/15-opcodes
 Opcode :: enum {
     UNKNOWN,
+    EXTENDED,
 
     // Arithmetic
     ADD, SUB,
@@ -131,7 +132,7 @@ zero_ops := [?]Opcode{
     0x0B = .NEW_LINE,
     0x0C = .SHOW_STATUS,
     0x0D = .VERIFY,
-    0x0E = .UNKNOWN,
+    0x0E = .EXTENDED,
     0x0F = .UNKNOWN,
 }
 
@@ -193,6 +194,36 @@ two_ops := [?]Opcode{
 
 // https://zspec.jaredreisinger.com/14-opcode-table
 ext_ops := [?]Opcode{
+    0x00 = .UNKNOWN,
+    0x01 = .UNKNOWN,
+    0x02 = .UNKNOWN,
+    0x03 = .UNKNOWN,
+    0x04 = .UNKNOWN,
+    0x05 = .UNKNOWN,
+    0x06 = .UNKNOWN,
+    0x07 = .UNKNOWN,
+    0x08 = .UNKNOWN,
+    0x09 = .UNKNOWN,
+    0x0A = .UNKNOWN,
+    0x0B = .UNKNOWN,
+    0x0C = .UNKNOWN,
+    0x0D = .UNKNOWN,
+    0x0E = .UNKNOWN,
+    0x0F = .UNKNOWN,
+    0x10 = .UNKNOWN,
+    0x11 = .UNKNOWN,
+    0x12 = .UNKNOWN,
+    0x13 = .UNKNOWN,
+    0x14 = .UNKNOWN,
+    0x15 = .UNKNOWN,
+    0x16 = .UNKNOWN,
+    0x17 = .UNKNOWN,
+    0x18 = .UNKNOWN,
+    0x19 = .UNKNOWN,
+    0x1A = .UNKNOWN,
+    0x1B = .UNKNOWN,
+    0x1C = .UNKNOWN,
+    0x1D = .UNKNOWN,
 }
 
 opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Opcode {
@@ -242,7 +273,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
     switch opcode {
-        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
+        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
              .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR, .GET_CHILD, .GET_SIBLING,
@@ -279,7 +310,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
     switch opcode {
-        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
+        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .AND, .OR, .NOT,
              .CALL, .CALL_2S,
@@ -317,7 +348,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     switch opcode {
-        case .UNKNOWN: unreachable("Invalid opcode during instruction parsing")
+        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .PRINT, .PRINT_RET: return true
 
         // Instruction does not need a zstring

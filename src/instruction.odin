@@ -89,37 +89,34 @@ instruction_read_operand :: proc(machine: ^Machine, instruction: ^Instruction, t
 }
 
 @(private="file")
+instruction_read_operands :: proc(machine: ^Machine, instruction: ^Instruction, operand_types: u8) {
+    operand_types := operand_types
+    instruction.operands = make([dynamic]Operand, 0, 4)
+    for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
+        if len(instruction.operands) == 4 do break
+        if bit(operand_types, 7) && !bit(operand_types, 6) {
+            instruction_read_operand(machine, instruction, .VARIABLE)
+        } else if bit(operand_types, 6) {
+            instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
+        } else {
+            instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
+        }
+    }
+}
+
+@(private="file")
 instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, byte: u8, address: u32) {
     num := byte & 0b11111
     operand_types := instruction_next_byte(machine, instruction)
 
     if bit(byte, 5) {
         instruction.opcode = opcode(machine, num, .VAR, address)
-        instruction.operands = make([dynamic]Operand, 0, 4)
-        for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
-            if len(instruction.operands) == 4 do break
-            if bit(operand_types, 7) && !bit(operand_types, 6) {
-                instruction_read_operand(machine, instruction, .VARIABLE)
-            } else if bit(operand_types, 6) {
-                instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
-            } else {
-                instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
-            }
-        }
+        instruction_read_operands(machine, instruction, operand_types)
     } else {
         instruction.opcode = opcode(machine, num, .TWO, address)
-        instruction.operands = make([dynamic]Operand, 0, 4)
-        // The specs say 2OP, but some opcodes (i.e. JE) allow more
-        for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
-            if len(instruction.operands) == 4 do break
-            if bit(operand_types, 7) && !bit(operand_types, 6) {
-                instruction_read_operand(machine, instruction, .VARIABLE)
-            } else if bit(operand_types, 6) {
-                instruction_read_operand(machine, instruction, .SMALL_CONSTANT)
-            } else {
-                instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
-            }
-        }
+        // The specs say 2OP, but some opcodes (i.e. JE) allow more, so just read as many as we can
+        instruction_read_operands(machine, instruction, operand_types)
+        assert(len(instruction.operands) >= 2)
     }
 }
 
@@ -128,6 +125,14 @@ instruction_read_short :: proc(machine: ^Machine, instruction: ^Instruction, byt
     num := byte & 0b1111
     if bit(byte, 4) && bit(byte, 5) {
         instruction.opcode = opcode(machine, num, .ZERO, address)
+        if instruction.opcode == .EXTENDED {
+            header := machine_header(machine)
+            assert(header.version >= 5)
+            num = instruction_next_byte(machine, instruction)
+            operand_types := instruction_next_byte(machine, instruction)
+            instruction.opcode = opcode(machine, num, .EXT, address)
+            instruction_read_operands(machine, instruction, operand_types)
+        }
     } else {
         instruction.opcode = opcode(machine, num, .ONE, address)
         instruction.operands = make([dynamic]Operand, 0, 1)
