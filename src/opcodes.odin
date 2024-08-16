@@ -27,10 +27,10 @@ Opcode :: enum {
 
     // Bitwise operators
     AND, OR, NOT,
-    ART_SHIFT,
+    ART_SHIFT, LOG_SHIFT,
 
     // Function calling and returning
-    CALL, CALL_1N, CALL_2N, CALL_2S, CALL_VN,
+    CALL, CALL_1N, CALL_1S, CALL_2N, CALL_2S, CALL_VN, CALL_VN2, CALL_VS2,
     RET, RFALSE, RTRUE,
     // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
 
@@ -96,7 +96,7 @@ var_ops := [?]Opcode{
     0x09 = .PULL,
     0x0A = .UNKNOWN,
     0x0B = .UNKNOWN,
-    0x0C = .UNKNOWN,
+    0x0C = .CALL_VS2,
     0x0D = .UNKNOWN,
     0x0E = .UNKNOWN,
     0x0F = .UNKNOWN,
@@ -110,7 +110,7 @@ var_ops := [?]Opcode{
     0x17 = .UNKNOWN,
     0x18 = .NOT,
     0x19 = .CALL_VN,
-    0x1A = .UNKNOWN,
+    0x1A = .CALL_VN2,
     0x1B = .UNKNOWN,
     0x1C = .UNKNOWN,
     0x1D = .UNKNOWN,
@@ -148,7 +148,7 @@ one_ops := [?]Opcode{
     0x05 = .INC,
     0x06 = .DEC,
     0x07 = .PRINT_ADDR,
-    0x08 = .UNKNOWN,
+    0x08 = .CALL_1S,
     0x09 = .REMOVE_OBJ,
     0x0A = .PRINT_OBJ,
     0x0B = .RET,
@@ -198,7 +198,7 @@ two_ops := [?]Opcode{
 ext_ops := [?]Opcode{
     0x00 = .UNKNOWN,
     0x01 = .UNKNOWN,
-    0x02 = .UNKNOWN,
+    0x02 = .LOG_SHIFT,
     0x03 = .ART_SHIFT,
     0x04 = .UNKNOWN,
     0x05 = .UNKNOWN,
@@ -274,7 +274,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 71)
+    #assert(u16(Opcode.NUM_OPS) == 73)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
@@ -290,15 +290,15 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 71)
+    #assert(u16(Opcode.NUM_OPS) == 73)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")
 
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .AND, .OR, .NOT,
-             .ART_SHIFT,
-             .CALL, .CALL_2S,
+             .ART_SHIFT, .LOG_SHIFT,
+             .CALL, .CALL_1S, .CALL_2S, .CALL_VS2,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
              .GET_PARENT, .GET_CHILD, .GET_SIBLING,
              .LOAD, .LOADB, .LOADW,
@@ -314,7 +314,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 }
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
-    #assert(u16(Opcode.NUM_OPS) == 71)
+    #assert(u16(Opcode.NUM_OPS) == 73)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")

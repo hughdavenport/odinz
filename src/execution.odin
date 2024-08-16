@@ -223,14 +223,25 @@ execute :: proc(machine: ^Machine) {
 
 
             // Function calling and returning
-            case .CALL:
+            case .CALL, .CALL_1N, .CALL_1S, .CALL_2N, .CALL_2S, .CALL_VN, .CALL_VN2, .CALL_VS2:
                 // https://zspec.jaredreisinger.com/15-opcodes#call
+                // https://zspec.jaredreisinger.com/15-opcodes#call_1n
+                // https://zspec.jaredreisinger.com/15-opcodes#call_1s
+                // https://zspec.jaredreisinger.com/15-opcodes#call_2n
+                // https://zspec.jaredreisinger.com/15-opcodes#call_2s
+                // https://zspec.jaredreisinger.com/15-opcodes#call_vn
+                // https://zspec.jaredreisinger.com/15-opcodes#call_vn2
+                // https://zspec.jaredreisinger.com/15-opcodes#call_vs2
                 assert(len(instruction.operands) > 0)
-                assert(instruction.has_store)
                 packed := machine_read_operand(machine, &instruction.operands[0])
                 routine_addr := packed_addr(machine, packed)
                 if routine_addr == 0 {
-                    machine_write_variable(machine, u16(instruction.store), 0)
+                    #assert(u16(Opcode.NUM_OPS) == 73)
+                    #partial switch instruction.opcode {
+                        case .CALL, .CALL_1S, .CALL_2S, .CALL_VS2:
+                            machine_write_variable(machine, u16(instruction.store), 0)
+                    }
+                    continue
                 } else {
                     routine := routine_read(machine, routine_addr)
                     routine.has_store = instruction.has_store
@@ -242,58 +253,6 @@ execute :: proc(machine: ^Machine) {
                     append(&machine.frames, routine)
                     continue
                 }
-
-            case .CALL_1N:
-                // https://zspec.jaredreisinger.com/15-opcodes#call_1n
-                assert(len(instruction.operands) == 1)
-                packed := machine_read_operand(machine, &instruction.operands[0])
-                routine_addr := packed_addr(machine, packed)
-                if routine_addr == 0 do continue
-                routine := routine_read(machine, routine_addr)
-                append(&machine.frames, routine)
-                continue
-
-            case .CALL_2N:
-                // https://zspec.jaredreisinger.com/15-opcodes#call_2n
-                assert(len(instruction.operands) == 2)
-                packed := machine_read_operand(machine, &instruction.operands[0])
-                routine_addr := packed_addr(machine, packed)
-                if routine_addr == 0 do continue
-                routine := routine_read(machine, routine_addr)
-                arg := machine_read_operand(machine, &instruction.operands[1])
-                routine.variables[0] = arg
-                append(&machine.frames, routine)
-                continue
-
-            case .CALL_2S:
-                // https://zspec.jaredreisinger.com/15-opcodes#call_2n
-                assert(len(instruction.operands) == 2)
-                assert(instruction.has_store)
-                packed := machine_read_operand(machine, &instruction.operands[0])
-                routine_addr := packed_addr(machine, packed)
-                if routine_addr == 0 do continue
-                routine := routine_read(machine, routine_addr)
-                routine.has_store = instruction.has_store
-                routine.store = instruction.store
-                arg := machine_read_operand(machine, &instruction.operands[1])
-                routine.variables[0] = arg
-                append(&machine.frames, routine)
-                continue
-
-            case .CALL_VN:
-                // https://zspec.jaredreisinger.com/15-opcodes#call_vn
-                assert(len(instruction.operands) > 0)
-                assert(!instruction.has_store)
-                packed := machine_read_operand(machine, &instruction.operands[0])
-                routine_addr := packed_addr(machine, packed)
-                if routine_addr == 0 do continue
-                routine := routine_read(machine, routine_addr)
-                for i := 1; i < len(instruction.operands); i += 1 {
-                    value := machine_read_operand(machine, &instruction.operands[i])
-                    routine.variables[i - 1] = value
-                }
-                append(&machine.frames, routine)
-                continue
 
             case .RET, .RFALSE, .RTRUE:
                 // https://zspec.jaredreisinger.com/15-opcodes#ret

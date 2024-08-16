@@ -91,9 +91,9 @@ instruction_read_operand :: proc(machine: ^Machine, instruction: ^Instruction, t
 @(private="file")
 instruction_read_operands :: proc(machine: ^Machine, instruction: ^Instruction, operand_types: u8) {
     operand_types := operand_types
-    instruction.operands = make([dynamic]Operand, 0, 4)
+
+    if cap(instruction.operands) == 0 do instruction.operands = make([dynamic]Operand, 0, 4)
     for ; !(bit(operand_types, 7) && bit(operand_types, 6)); operand_types <<= 2 {
-        if len(instruction.operands) == 4 do break
         if bit(operand_types, 7) && !bit(operand_types, 6) {
             instruction_read_operand(machine, instruction, .VARIABLE)
         } else if bit(operand_types, 6) {
@@ -101,6 +101,7 @@ instruction_read_operands :: proc(machine: ^Machine, instruction: ^Instruction, 
         } else {
             instruction_read_operand(machine, instruction, .LARGE_CONSTANT)
         }
+        if len(instruction.operands) % 4 == 0 do break
     }
 }
 
@@ -111,7 +112,16 @@ instruction_read_variable :: proc(machine: ^Machine, instruction: ^Instruction, 
 
     if bit(byte, 5) {
         instruction.opcode = opcode(machine, num, .VAR, address)
-        instruction_read_operands(machine, instruction, operand_types)
+        #partial switch instruction.opcode {
+            case .CALL_VN2, .CALL_VS2:
+                // https://zspec.jaredreisinger.com/04-instructions#4_4_3_1
+                next_types := instruction_next_byte(machine, instruction)
+                instruction_read_operands(machine, instruction, operand_types)
+                instruction_read_operands(machine, instruction, next_types)
+
+            case:
+                instruction_read_operands(machine, instruction, operand_types)
+        }
     } else {
         instruction.opcode = opcode(machine, num, .TWO, address)
         // The specs say 2OP, but some opcodes (i.e. JE) allow more, so just read as many as we can
