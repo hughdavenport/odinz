@@ -32,6 +32,7 @@ Opcode :: enum {
     // Function calling and returning
     CALL, CALL_1N, CALL_1S, CALL_2N, CALL_2S, CALL_VN, CALL_VN2, CALL_VS2,
     RET, RFALSE, RTRUE,
+    CHECK_ARG_COUNT,
     // Also PRINT_RET and RET_POPPED listed with printing and stacks respectively
 
     // Branches
@@ -115,7 +116,7 @@ var_ops := [?]Opcode{
     0x1C = .UNKNOWN,
     0x1D = .UNKNOWN,
     0x1E = .UNKNOWN,
-    0x1F = .UNKNOWN,
+    0x1F = .CHECK_ARG_COUNT,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -274,10 +275,11 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 73)
+    #assert(u16(Opcode.NUM_OPS) == 74)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
+             .CHECK_ARG_COUNT,
              .JZ, .JL, .JE, .JG, .JIN,
              .TEST, .TEST_ATTR, .GET_CHILD, .GET_SIBLING,
              .VERIFY:
@@ -290,7 +292,7 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 73)
+    #assert(u16(Opcode.NUM_OPS) == 74)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")
@@ -314,7 +316,7 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
 }
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
-    #assert(u16(Opcode.NUM_OPS) == 73)
+    #assert(u16(Opcode.NUM_OPS) == 74)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")

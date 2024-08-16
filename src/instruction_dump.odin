@@ -74,6 +74,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .AND, .OR, .NOT,
              .ART_SHIFT, .LOG_SHIFT,
              .RET, .RFALSE, .RTRUE,
+             .CHECK_ARG_COUNT,
              .GET_PROP_LEN,
              .JZ, .JL, .JE, .JG, .TEST,
              .LOADB, .LOADW,
