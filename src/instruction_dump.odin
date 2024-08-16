@@ -67,7 +67,9 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
 
     fmt.printf(" %-16s", opcode_s)
     switch instruction.opcode {
-        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode while dumping instruction")
+        case .UNKNOWN, .EXTENDED, .NUM_OPS:
+            unreachable("Invalid opcode while dumping instruction")
+
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .AND, .OR, .NOT,
              .ART_SHIFT, .LOG_SHIFT,

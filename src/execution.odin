@@ -116,7 +116,7 @@ execute :: proc(machine: ^Machine) {
         jump_condition := false
 
         switch instruction.opcode {
-            case .UNKNOWN, .EXTENDED:
+            case .UNKNOWN, .EXTENDED, .NUM_OPS:
                 unreachable("Invalid opcode while executing instruction %v", instruction)
 
             // Arithmetic

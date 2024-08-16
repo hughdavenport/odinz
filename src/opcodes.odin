@@ -27,7 +27,7 @@ Opcode :: enum {
 
     // Bitwise operators
     AND, OR, NOT,
-    ART_SHIFT, LOG_SHIFT,
+    ART_SHIFT,
 
     // Function calling and returning
     CALL, CALL_1N, CALL_2N, CALL_2S, CALL_VN,
@@ -79,6 +79,7 @@ Opcode :: enum {
     RESTORE,
     SHOW_STATUS,
     VERIFY,
+    NUM_OPS,
 }
 
 // https://zspec.jaredreisinger.com/14-opcode-table
@@ -197,7 +198,7 @@ two_ops := [?]Opcode{
 ext_ops := [?]Opcode{
     0x00 = .UNKNOWN,
     0x01 = .UNKNOWN,
-    0x02 = .LOG_SHIFT,
+    0x02 = .UNKNOWN,
     0x03 = .ART_SHIFT,
     0x04 = .UNKNOWN,
     0x05 = .UNKNOWN,
@@ -273,7 +274,8 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    switch opcode {
+    #assert(u16(Opcode.NUM_OPS) == 71)
+    #partial switch opcode {
         case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
              .JZ, .JL, .JE, .JG, .JIN,
@@ -282,40 +284,20 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
                  return true
 
         case .RESTORE: if header.version <= 3 do return true
-
-        // Instruction does not need to branch
-        case .ADD, .SUB, .MUL, .DIV, .MOD,
-             .INC, .DEC,
-             .AND, .OR, .NOT,
-             .ART_SHIFT, .LOG_SHIFT,
-             .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
-             .JUMP, // This is an odd one out
-             .CLEAR_ATTR, .SET_ATTR,
-             .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
-             .PUT_PROP,
-             .GET_PARENT, // This is an odd one out
-             .INSERT_OBJ, .REMOVE_OBJ,
-             .LOAD, .LOADB, .LOADW,
-             .STORE, .STOREB, .STOREW,
-             .NEW_LINE,
-             .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
-             .PRINT_RET,
-             .OUTPUT_STREAM,
-             .INPUT_STREAM, .READ,
-             .PUSH, .PULL, .RET_POPPED,
-             .QUIT, .RANDOM, .RESTART, .SHOW_STATUS:
-        // Instruction does not need to branch
     }
     return false
 }
 
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    switch opcode {
-        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
+    #assert(u16(Opcode.NUM_OPS) == 71)
+    #partial switch opcode {
+        case .UNKNOWN, .EXTENDED, .NUM_OPS:
+            unreachable("Invalid opcode during instruction parsing")
+
         case .ADD, .SUB, .MUL, .DIV, .MOD,
              .AND, .OR, .NOT,
-             .ART_SHIFT, .LOG_SHIFT,
+             .ART_SHIFT,
              .CALL, .CALL_2S,
              .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
              .GET_PARENT, .GET_CHILD, .GET_SIBLING,
@@ -327,55 +309,17 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .READ: if header.version >= 5 do return true
 
         case .RESTORE: if header.version >= 4 do return true
-
-        // Instruction does not need to store
-        case .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .CALL_1N, .CALL_2N, .CALL_VN, .RET, .RFALSE, .RTRUE,
-             .JUMP, .JZ, .JL, .JE, .JG, .JIN,
-             .TEST, .TEST_ATTR,
-             .CLEAR_ATTR, .SET_ATTR,
-             .PUT_PROP,
-             .INSERT_OBJ, .REMOVE_OBJ,
-             .STORE, .STOREB, .STOREW,
-             .NEW_LINE,
-             .PRINT, .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
-             .PRINT_RET,
-             .OUTPUT_STREAM,
-             .INPUT_STREAM,
-             .PUSH, .RET_POPPED,
-             .QUIT, .RESTART, .SHOW_STATUS, .VERIFY:
-        // Instruction does not need to store
     }
     return false
 }
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
-    switch opcode {
-        case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
-        case .PRINT, .PRINT_RET: return true
+    #assert(u16(Opcode.NUM_OPS) == 71)
+    #partial switch opcode {
+        case .UNKNOWN, .EXTENDED, .NUM_OPS:
+            unreachable("Invalid opcode during instruction parsing")
 
-        // Instruction does not need a zstring
-        case .ADD, .SUB, .MUL, .DIV, .MOD,
-             .INC, .INC_CHK, .DEC, .DEC_CHK,
-             .AND, .OR, .NOT,
-             .ART_SHIFT, .LOG_SHIFT,
-             .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN, .RET, .RFALSE, .RTRUE,
-             .JUMP, .JZ, .JL, .JE, .JG, .JIN,
-             .TEST, .TEST_ATTR,
-             .CLEAR_ATTR, .SET_ATTR,
-             .GET_PROP, .GET_PROP_LEN, .GET_PROP_ADDR, .GET_NEXT_PROP,
-             .PUT_PROP,
-             .GET_PARENT, .GET_CHILD, .GET_SIBLING,
-             .INSERT_OBJ, .REMOVE_OBJ,
-             .LOAD, .LOADB, .LOADW,
-             .STORE, .STOREB, .STOREW,
-             .NEW_LINE,
-             .PRINT_CHAR, .PRINT_NUM, .PRINT_OBJ, .PRINT_ADDR, .PRINT_PADDR,
-             .OUTPUT_STREAM,
-             .INPUT_STREAM, .READ,
-             .PUSH, .PULL, .RET_POPPED,
-             .QUIT, .RANDOM, .RESTART, .RESTORE, .SHOW_STATUS, .VERIFY:
-        // Instruction does not need a zstring
+        case .PRINT, .PRINT_RET: return true
     }
     return false
 }
