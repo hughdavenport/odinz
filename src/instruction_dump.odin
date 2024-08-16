@@ -85,7 +85,7 @@ instruction_dump :: proc(machine: ^Machine, instruction: ^Instruction, indent :=
              .QUIT, .RANDOM, .RESTART, .RESTORE, .SHOW_STATUS, .VERIFY:
             operands_dump(instruction.operands[:])
 
-        case .CALL, .CALL_1N, .CALL_2N, .CALL_2S, .CALL_VN:
+        case .CALL, .CALL_1N, .CALL_1S, .CALL_2N, .CALL_2S, .CALL_VN, .CALL_VN2, .CALL_VS2:
             assert(len(instruction.operands) > 0)
             switch instruction.operands[0].type {
                 case .SMALL_CONSTANT, .LARGE_CONSTANT:

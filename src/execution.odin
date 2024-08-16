@@ -250,6 +250,7 @@ execute :: proc(machine: ^Machine) {
                         value := machine_read_operand(machine, &instruction.operands[i])
                         routine.variables[i - 1] = value
                     }
+                    routine.arg_count = u8(len(instruction.operands)) - 1
                     append(&machine.frames, routine)
                     continue
                 }

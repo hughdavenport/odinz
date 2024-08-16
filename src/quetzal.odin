@@ -141,7 +141,10 @@ quetzal_process_stks_frame :: proc(data: []u8, length: ^int) -> (frame: Frame, o
     v := flags & 0xf
     frame.store = data[4]
     args := data[5]
-    // FIXME Use args somehow. bit field on which args are provided
+    for i in 0..=6 {
+        frame.arg_count += args % 2
+        args >>= 1
+    }
     n := endian.get_u16(data[6:][:2], .Big) or_return
     data = data[8:]
     if len(data) < 2 * int(u16(v) + n) do return frame, false

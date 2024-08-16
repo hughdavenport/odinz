@@ -9,6 +9,7 @@ Frame :: struct {
     stack: [dynamic]u16 `fmt:"04x"`,
     has_store: bool,
     store: u8,
+    arg_count: u8,
 }
 
 delete_frame :: proc(frame: ^Frame) {
