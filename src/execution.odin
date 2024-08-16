@@ -236,7 +236,7 @@ execute :: proc(machine: ^Machine) {
                 packed := machine_read_operand(machine, &instruction.operands[0])
                 routine_addr := packed_addr(machine, packed)
                 if routine_addr == 0 {
-                    #assert(u16(Opcode.NUM_OPS) == 74) // Can remove after CALL_VS is added
+                    #assert(u16(Opcode.NUM_OPS) == 75) // Can remove after CALL_VS is added
                     #partial switch instruction.opcode {
                         case .CALL, .CALL_1S, .CALL_2S, .CALL_VS2:
                             machine_write_variable(machine, u16(instruction.store), 0)
@@ -630,6 +630,14 @@ execute :: proc(machine: ^Machine) {
                     continue
                 }
                 unimplemented("unsuccessful restore")
+
+            case .SAVE:
+                // https://zspec.jaredreisinger.com/15-opcodes#save
+                if quetzal_save(machine) {
+                    header = machine_header(machine)
+                    continue
+                }
+                unimplemented("unsuccessful save")
 
             case .SHOW_STATUS:
                 // https://zspec.jaredreisinger.com/15-opcodes#random

@@ -78,6 +78,7 @@ Opcode :: enum {
     RANDOM,
     RESTART,
     RESTORE,
+    SAVE,
     SHOW_STATUS,
     VERIFY,
     NUM_OPS,
@@ -126,7 +127,7 @@ zero_ops := [?]Opcode{
     0x02 = .PRINT,
     0x03 = .PRINT_RET,
     0x04 = .UNKNOWN,
-    0x05 = .UNKNOWN,
+    0x05 = .SAVE,
     0x06 = .RESTORE,
     0x07 = .RESTART,
     0x08 = .RET_POPPED,
@@ -275,7 +276,7 @@ opcode :: proc(machine: ^Machine, num: u8, type: OpcodeType, address: u32) -> Op
 
 opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 74)
+    #assert(u16(Opcode.NUM_OPS) == 75)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED: unreachable("Invalid opcode during instruction parsing")
         case .INC_CHK, .DEC_CHK,
@@ -285,14 +286,14 @@ opcode_needs_branch :: proc(machine: ^Machine, opcode: Opcode) -> bool {
              .VERIFY:
                  return true
 
-        case .RESTORE: if header.version <= 3 do return true
+        case .RESTORE, .SAVE: if header.version <= 3 do return true
     }
     return false
 }
 
 opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
     header := machine_header(machine)
-    #assert(u16(Opcode.NUM_OPS) == 74)
+    #assert(u16(Opcode.NUM_OPS) == 75)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")
@@ -310,13 +311,13 @@ opcode_needs_store :: proc(machine: ^Machine, opcode: Opcode) -> bool {
         case .PULL: if header.version >= 6 do return true
         case .READ: if header.version >= 5 do return true
 
-        case .RESTORE: if header.version >= 4 do return true
+        case .RESTORE, .SAVE: if header.version >= 4 do return true
     }
     return false
 }
 
 opcode_needs_zstring :: proc(machine: ^Machine, opcode: Opcode) -> bool {
-    #assert(u16(Opcode.NUM_OPS) == 74)
+    #assert(u16(Opcode.NUM_OPS) == 75)
     #partial switch opcode {
         case .UNKNOWN, .EXTENDED, .NUM_OPS:
             unreachable("Invalid opcode during instruction parsing")

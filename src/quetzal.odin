@@ -37,6 +37,7 @@ IFF_Form :: struct {
 
 quetzal_read_chunk :: proc(data: []u8) -> (chunk: IFF_Chunk, ok: bool) {
     // https://en.wikipedia.org/wiki/Interchange_File_Format
+    // http://www.martinreddy.net/gfx/2d/IFF.txt
     if len(data) < 8 do return chunk, false
     #assert(len(IFF_Chunk_Type) == 6, "Unexpected number of chunk types")
     if slice.equal(data[:4], transmute([]u8)string("FORM")) do chunk.type = .FORM
@@ -275,5 +276,10 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     if monospace do header.flags2 |= {.forced_mono}
     else do header.flags2 &= ~{.forced_mono}
 
+    return true
+}
+
+quetzal_save :: proc(machine: ^Machine) -> bool {
+    if true do unimplemented()
     return true
 }
