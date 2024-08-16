@@ -200,14 +200,26 @@ quetzal_process_cmem_chunk :: proc(machine: ^Machine, chunk: IFF_Chunk) -> (data
     return memory, true
 }
 
-quetzal_restore :: proc(machine: ^Machine) -> bool {
+quetzal_filepath :: proc(machine: ^Machine, writable: bool = false) -> string {
     base := filepath.base(machine.romfile)
     stem := filepath.short_stem(base)
     file := fmt.tprintf("%s.qzl", stem)
 
-    if !os.exists(file) {
-        unimplemented()
+    if writable {
+        if os.exists(file) {
+            unimplemented("Overwrite")
+        }
+    } else {
+        if !os.exists(file) {
+            unimplemented("Choose another file")
+        }
     }
+    return file
+}
+
+quetzal_restore :: proc(machine: ^Machine) -> bool {
+    file := quetzal_filepath(machine)
+    debug("RESTORE: Starting restore process for %s", file)
 
     // https://zspec.jaredreisinger.com/06-game-state#6_1_2
     header := machine_header(machine)
@@ -215,20 +227,24 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
 
     // FIXME We could just get a file handle and use seek and read for better efficiency
     data := os.read_entire_file(file) or_return
+    debug("RESTORE: Read file contents")
 
     form := quetzal_read_form(data) or_return
+    debug("RESTORE: Found IFF form of type %s", form.type)
     if form.type != .IFZS do return false
 
-    chunk, ok := quetzal_read_header(&form)
-    if !ok do return false
+    chunk := quetzal_read_header(&form) or_return
+    debug("RESTORE: Found chunk type %s", chunk.type)
     if chunk.type != .IFHD do return false
     quetzal_check_header(machine, chunk) or_return
+    debug("RESTORE: Header is valid")
 
     pc := u32(0)
     for b in chunk.data[10:][:3] do pc = (pc << 8) | u32(b)
 
     memory: []u8
     frames: [dynamic]Frame
+    ok: bool
     for chunk, ok = quetzal_next_chunk(&form);
             ok;
             chunk, ok = quetzal_next_chunk(&form) {
@@ -243,9 +259,11 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
             case .FORM: unreachable()
             case: unreachable()
         }
+        debug("RESTORE: Processed %s", chunk.type)
     }
 
     if len(memory) == 0 || len(machine.frames) == 0 do return false
+    debug("RESTORE: Restoring Z-Machine")
 
     // Update current frame pc
     if header.version <= 3 {
@@ -272,10 +290,114 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     header = machine_header(machine)
     header.flags2 = flags2
 
+    debug("RESTORE: Finished")
+    return true
+}
+
+quetzal_form_write_data :: proc(fd: os.Handle, data: []u8, length: ^u32) {
+    os.write(fd, data)
+    length^ += u32(len(data))
+}
+
+quetzal_form_write_u32 :: proc(fd: os.Handle, value: u32, length: ^u32) {
+    data: [4]u8
+    endian.put_u32(data[:], .Big, value)
+    quetzal_form_write_data(fd, data[:], length)
+}
+
+quetzal_form_write_u16 :: proc(fd: os.Handle, value: u16, length: ^u32) {
+    data: [2]u8
+    endian.put_u16(data[:], .Big, value)
+    quetzal_form_write_data(fd, data[:], length)
+}
+
+quetzal_form_write_string :: proc(fd: os.Handle, value: string, length: ^u32) {
+    quetzal_form_write_data(fd, transmute([]u8)value, length)
+}
+
+quetzal_form_write :: proc{
+    quetzal_form_write_u32,
+    quetzal_form_write_u16,
+    quetzal_form_write_string,
+    quetzal_form_write_data,
+}
+
+quetzal_write_ifhd :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bool {
+    // https://inform-fiction.org/zmachine/standards/quetzal/index.html#five
+    header := machine_header(machine)
+    if len(machine.frames) == 0 do return false
+    current_frame := machine.frames[len(machine.frames) - 1]
+
+    quetzal_form_write(fd, "IFhd", length)
+    quetzal_form_write(fd, u32(13), length)
+    quetzal_form_write(fd, u16(header.release), length)
+    quetzal_form_write(fd, header.serial[:], length)
+    quetzal_form_write(fd, u16(header.checksum), length)
+    pc := current_frame.pc
+    if header.version <= 3 {
+        // V3 pc points to the branch byte(s) of the SAVE instruction
+        // https://zspec.jaredreisinger.com/04-instructions#4_7
+        if bit(machine.memory[pc], 6) do pc -= 1
+        else do pc -= 2
+    } else {
+        // V4+ pc points to the store byte of the SAVE instruction
+        // https://zspec.jaredreisinger.com/04-instructions#4_6
+        pc -= pc + 1
+    }
+    // PC is only 3 bytes, with 0 byte pad
+    pc_data: [4]u8
+    endian.put_u32(pc_data[:], .Big, pc)
+    quetzal_form_write(fd, pc_data[1:], length)
+    quetzal_form_write(fd, []u8{0}, length)
+    return true
+}
+
+quetzal_write_cmem :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bool {
+    if true do unimplemented()
+    return true
+}
+
+quetzal_write_stks :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bool {
+    stks_length := u32(0)
+    defer length^ += 8 + stks_length
+    quetzal_form_write(fd, "Stks", length)
+    stks_offset, err := os.seek(fd, 0, os.SEEK_CUR)
+    if err != os.ERROR_NONE do return false
+    defer {
+        end, err := os.seek(fd, stks_offset, os.SEEK_SET)
+        if err == os.ERROR_NONE do quetzal_form_write(fd, stks_length, length)
+        os.seek(fd, end, os.SEEK_SET)
+    }
+    quetzal_form_write(fd, "THEntHE", &stks_length)
+
+    if true do unimplemented()
     return true
 }
 
 quetzal_save :: proc(machine: ^Machine) -> bool {
+    header := machine_header(machine)
+    file := quetzal_filepath(machine, true)
+
+    fd, err := os.open(file, os.O_WRONLY | os.O_CREATE)
+    if err != os.ERROR_NONE do return false
+    defer os.close(fd)
+
+    form_length := u32(0)
+    os.write(fd, transmute([]u8)string("FORM"))
+    _, err = os.seek(fd, 4, os.SEEK_CUR)
+    if err != os.ERROR_NONE do return false
+    defer {
+        data: [4]u8
+        os.seek(fd, 4, os.SEEK_SET) // Just after "FORM"
+        endian.put_u32(data[:], .Big, form_length)
+        os.write(fd, data[:])
+    }
+    quetzal_form_write(fd, "IFZS", &form_length)
+
+    quetzal_write_ifhd(machine, fd, &form_length)
+    quetzal_write_cmem(machine, fd, &form_length)
+    quetzal_write_stks(machine, fd, &form_length)
+
     if true do unimplemented()
     return true
 }
