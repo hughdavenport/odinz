@@ -266,22 +266,19 @@ _initilise_machine_flags2 :: proc(machine: ^Machine) {
 }
 
 restart_machine :: proc(machine: ^Machine) {
+    // https://zspec.jaredreisinger.com/06-game-state#6_1_3
     header := machine_header(machine)
-    transcribing := .transcript in header.flags2
-    monospace := .forced_mono in header.flags2
+    flags2 := header.flags2
+
     delete_machine(machine)
     data, ok := os.read_entire_file(machine.romfile)
     if !ok do unreachable("Could not read '%s'", machine.romfile)
     machine.memory = data
-    header = machine_header(machine)
-
     initialise_machine(machine)
 
-    if transcribing do header.flags2 |= {.transcript}
-    else do header.flags2 &= ~{.transcript}
-
-    if monospace do header.flags2 |= {.forced_mono}
-    else do header.flags2 &= ~{.forced_mono}
+    // https://zspec.jaredreisinger.com/06-game-state#6_1_3
+    header = machine_header(machine)
+    header.flags2 = flags2
 }
 
 delete_machine :: proc(machine: ^Machine) {

@@ -201,7 +201,6 @@ quetzal_process_cmem_chunk :: proc(machine: ^Machine, chunk: IFF_Chunk) -> (data
 }
 
 quetzal_restore :: proc(machine: ^Machine) -> bool {
-    header := machine_header(machine)
     base := filepath.base(machine.romfile)
     stem := filepath.short_stem(base)
     file := fmt.tprintf("%s.qzl", stem)
@@ -210,8 +209,9 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
         unimplemented()
     }
 
-    transcribing := .transcript in header.flags2
-    monospace := .forced_mono in header.flags2
+    // https://zspec.jaredreisinger.com/06-game-state#6_1_2
+    header := machine_header(machine)
+    flags2 := header.flags2
 
     // FIXME We could just get a file handle and use seek and read for better efficiency
     data := os.read_entire_file(file) or_return
@@ -268,13 +268,9 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     delete(machine.frames)
     machine.frames = frames
 
+    // https://zspec.jaredreisinger.com/06-game-state#6_1_2
     header = machine_header(machine)
-
-    if transcribing do header.flags2 |= {.transcript}
-    else do header.flags2 &= ~{.transcript}
-
-    if monospace do header.flags2 |= {.forced_mono}
-    else do header.flags2 &= ~{.forced_mono}
+    header.flags2 = flags2
 
     return true
 }
