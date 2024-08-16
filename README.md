@@ -11,7 +11,7 @@ Zork was originally developed by [Infocom](https://en.wikipedia.org/wiki/Infocom
 
 I am developing this along side a [YouTube series](https://www.youtube.com/watch?v=d4Gjps5gIjw&list=PL5r5Q39GjMDfyTr-QAT0hU81j5ly1nTpB) where I will build this to play my copy of Zork.
 
-I will be following the [standards document](https://www.inform-fiction.org/zmachine/standards/current/overview.html), which has helpfully been [annotated to be clearer](https://zspec.jaredreisinger.com/). I will also use the [Infocom Toolkit (Z-tools)](https://inform-fiction.org/zmachine/ztools.html) as reference material, such as Txd the disassembler, and Infodump the story file parser.
+I will be following the [standards document](https://www.inform-fiction.org/zmachine/standards/current/overview.html), which has helpfully been [annotated to be clearer](https://zspec.jaredreisinger.com/). I will also use the [Infocom Toolkit (Z-tools)](https://inform-fiction.org/zmachine/ztools.html) as reference material, such as Txd the disassembler, and Infodump the story file parser. The saved game format implemented follows the [Quetzal format](https://inform-fiction.org/zmachine/standards/quetzal/index.html).
 
 Please leave any comments about what you liked. Feel free to suggest any features or improvements.
 
