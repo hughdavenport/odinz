@@ -226,25 +226,43 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     flags2 := header.flags2
 
     // FIXME We could just get a file handle and use seek and read for better efficiency
-    data := os.read_entire_file(file) or_return
-    debug("RESTORE: Read file contents")
+    data, ok := os.read_entire_file(file)
+    if !ok {
+        debug("RESTORE: Read file contents failed")
+        return false
+    }
 
-    form := quetzal_read_form(data) or_return
-    debug("RESTORE: Found IFF form of type %s", form.type)
-    if form.type != .IFZS do return false
+    form: IFF_Form
+    form, ok = quetzal_read_form(data)
+    if !ok {
+        debug("RESTORE: Could not read IFF form")
+        return false
+    }
+    if form.type != .IFZS {
+        debug("RESTORE: Expected IFZS form type. Found %s", form.type)
+        return false
+    }
 
-    chunk := quetzal_read_header(&form) or_return
-    debug("RESTORE: Found chunk type %s", chunk.type)
-    if chunk.type != .IFHD do return false
-    quetzal_check_header(machine, chunk) or_return
-    debug("RESTORE: Header is valid")
+    chunk: IFF_Chunk
+    chunk, ok = quetzal_read_header(&form)
+    if !ok {
+        debug("RESTORE: Could not read chunk")
+        return false
+    }
+    if chunk.type != .IFHD {
+        debug("RESTORE: Expected first chunk to be IFHD. Found %s", chunk.type)
+        return false
+    }
+    if !quetzal_check_header(machine, chunk) {
+        debug("RESTORE: Header is invalid")
+        return false
+    }
 
     pc := u32(0)
     for b in chunk.data[10:][:3] do pc = (pc << 8) | u32(b)
 
     memory: []u8
     frames: [dynamic]Frame
-    ok: bool
     for chunk, ok = quetzal_next_chunk(&form);
             ok;
             chunk, ok = quetzal_next_chunk(&form) {
@@ -259,11 +277,18 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
             case .FORM: unreachable()
             case: unreachable()
         }
-        debug("RESTORE: Processed %s", chunk.type)
+        debug("RESTORE: Read %s chunk", chunk.type)
     }
+    if !ok do return false
 
-    if len(memory) == 0 || len(machine.frames) == 0 do return false
-    debug("RESTORE: Restoring Z-Machine")
+    if len(memory) == 0 {
+        debug("RESTORE: Never found a CMem or UMem chunk")
+        return false
+    }
+    if len(machine.frames) == 0 {
+        debug("RESTORE: Never found a Stks chunk")
+        return false
+    }
 
     // Update current frame pc
     if header.version <= 3 {
@@ -311,6 +336,10 @@ quetzal_form_write_u16 :: proc(fd: os.Handle, value: u16, length: ^u32) {
     quetzal_form_write_data(fd, data[:], length)
 }
 
+quetzal_form_write_u8 :: proc(fd: os.Handle, value: u8, length: ^u32) {
+    quetzal_form_write_data(fd, {value}, length)
+}
+
 quetzal_form_write_string :: proc(fd: os.Handle, value: string, length: ^u32) {
     quetzal_form_write_data(fd, transmute([]u8)value, length)
 }
@@ -318,6 +347,7 @@ quetzal_form_write_string :: proc(fd: os.Handle, value: string, length: ^u32) {
 quetzal_form_write :: proc{
     quetzal_form_write_u32,
     quetzal_form_write_u16,
+    quetzal_form_write_u8,
     quetzal_form_write_string,
     quetzal_form_write_data,
 }
@@ -334,6 +364,7 @@ quetzal_write_ifhd :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
     quetzal_form_write(fd, header.serial[:], length)
     quetzal_form_write(fd, u16(header.checksum), length)
     pc := current_frame.pc
+    debug("FIXME, i'm not too sure that the PC calculation is correct")
     if header.version <= 3 {
         // V3 pc points to the branch byte(s) of the SAVE instruction
         // https://zspec.jaredreisinger.com/04-instructions#4_7
@@ -353,23 +384,80 @@ quetzal_write_ifhd :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
 }
 
 quetzal_write_cmem :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bool {
-    if true do unimplemented()
+    // https://inform-fiction.org/zmachine/standards/quetzal/index.html#three
+    cmem_length := u32(0)
+    defer length^ += cmem_length
+    quetzal_form_write(fd, "CMem", length)
+    cmem_offset, err := os.seek(fd, 0, os.SEEK_CUR)
+    if err != os.ERROR_NONE do return false
+    _, err = os.seek(fd, 4, os.SEEK_CUR)
+    if err != os.ERROR_NONE do return false
+    defer {
+        for {
+            end, err := os.seek(fd, 0, os.SEEK_CUR)
+            if err != os.ERROR_NONE do break
+            _, err = os.seek(fd, cmem_offset, os.SEEK_SET)
+            if err != os.ERROR_NONE do break
+            quetzal_form_write(fd, cmem_length, length)
+            _, err = os.seek(fd, end, os.SEEK_SET)
+            if err != os.ERROR_NONE do break
+            if cmem_length % 2 == 1 do quetzal_form_write(fd, []u8{0}, length)
+            break
+        }
+    }
+    memory := os.read_entire_file(machine.romfile) or_return
+    counter := u32(0)
+    for orig_b, idx in memory {
+        b := orig_b ~ machine.memory[idx]
+        if b == 0 {
+            counter += 1
+        } else {
+            for counter >= 0xff {
+                quetzal_form_write(fd, u8(0), &cmem_length)
+                quetzal_form_write(fd, u8(0xfe), &cmem_length)
+                counter -= 0xff
+            }
+            if counter > 0 {
+                quetzal_form_write(fd, u8(0), &cmem_length)
+                quetzal_form_write(fd, counter, &cmem_length)
+                counter = 0
+            }
+            quetzal_form_write(fd, b, &cmem_length)
+        }
+    }
     return true
 }
 
 quetzal_write_stks :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bool {
+    // https://inform-fiction.org/zmachine/standards/quetzal/index.html#four
     stks_length := u32(0)
-    defer length^ += 8 + stks_length
+    defer length^ += stks_length
     quetzal_form_write(fd, "Stks", length)
     stks_offset, err := os.seek(fd, 0, os.SEEK_CUR)
     if err != os.ERROR_NONE do return false
+    _, err = os.seek(fd, 4, os.SEEK_CUR)
+    if err != os.ERROR_NONE do return false
     defer {
-        end, err := os.seek(fd, stks_offset, os.SEEK_SET)
-        if err == os.ERROR_NONE do quetzal_form_write(fd, stks_length, length)
-        os.seek(fd, end, os.SEEK_SET)
+        for {
+            end, err := os.seek(fd, 0, os.SEEK_CUR)
+            if err != os.ERROR_NONE do break
+            _, err = os.seek(fd, stks_offset, os.SEEK_SET)
+            if err != os.ERROR_NONE do break
+            quetzal_form_write(fd, stks_length, length)
+            _, err = os.seek(fd, end, os.SEEK_SET)
+            if err != os.ERROR_NONE do break
+            if stks_length % 2 == 1 do quetzal_form_write(fd, []u8{0}, length)
+            break
+        }
     }
-    quetzal_form_write(fd, "THEntHE", &stks_length)
 
+    header := machine_header(machine)
+    if header.version == 6 do unimplemented("Initial frame in V6")
+    quetzal_form_write(fd, "THEntHE", &stks_length)
+    quetzal_form_write(fd, "foobar", &stks_length)
+
+    if true do debug("unimpl stks")
+    if true do return false
     if true do unimplemented()
     return true
 }
@@ -378,8 +466,13 @@ quetzal_save :: proc(machine: ^Machine) -> bool {
     header := machine_header(machine)
     file := quetzal_filepath(machine, true)
 
-    fd, err := os.open(file, os.O_WRONLY | os.O_CREATE)
-    if err != os.ERROR_NONE do return false
+    mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+    perm := os.S_IRUSR | os.S_IWUSR // rw-------
+    fd, err := os.open(file, mode, perm)
+    if err != os.ERROR_NONE {
+        debug("SAVE: Couldn't open file %s. %v", file, err)
+        return false
+    }
     defer os.close(fd)
 
     form_length := u32(0)
@@ -398,6 +491,6 @@ quetzal_save :: proc(machine: ^Machine) -> bool {
     quetzal_write_cmem(machine, fd, &form_length)
     quetzal_write_stks(machine, fd, &form_length)
 
-    if true do unimplemented()
+    debug("SAVE: Finished")
     return true
 }
