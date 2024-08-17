@@ -453,12 +453,32 @@ quetzal_write_stks :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
 
     header := machine_header(machine)
     if header.version == 6 do unimplemented("Initial frame in V6")
-    quetzal_form_write(fd, "THEntHE", &stks_length)
-    quetzal_form_write(fd, "foobar", &stks_length)
+    for _ in 0..<6 do quetzal_form_write(fd, u8(0), &stks_length)
+    if len(machine.frames) > 0 {
+        frame := machine.frames[0]
+        quetzal_form_write(fd, u32(len(frame.stack)), &stks_length)
+        for val in frame.stack do quetzal_form_write(fd, val, &stks_length)
+    } else do quetzal_form_write(fd, u32(0), &stks_length)
 
-    if true do debug("unimpl stks")
-    if true do return false
-    if true do unimplemented()
+    for idx := 1; idx < len(machine.frames); idx += 1 {
+        // FIXME The way the PC is calculated is a bit weird as no PC on the actual machine
+        //       Hence the use of the `last_frame`
+        last_frame := machine.frames[idx - 1]
+        pc_data: [4]u8
+        endian.put_u32(pc_data[:], .Big, last_frame.pc)
+        quetzal_form_write(fd, pc_data[1:], &stks_length)
+        frame := machine.frames[idx]
+        flags := u8(0)
+        for _ in frame.variables do flags = (flags << 1) + 1 // vvvv
+        if !frame.has_store do flags |= 0x10 // p
+        quetzal_form_write(fd, flags, &stks_length)
+        quetzal_form_write(fd, frame.store, &stks_length)
+        args := u8(0)
+        for _ in 0..<frame.arg_count do args = (args << 1) + 1 // gfedcba
+        quetzal_form_write(fd, u32(len(frame.stack)), &stks_length)
+        for val in frame.stack do quetzal_form_write(fd, val, &stks_length)
+    }
+
     return true
 }
 
