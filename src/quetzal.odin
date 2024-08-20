@@ -207,7 +207,7 @@ quetzal_filepath :: proc(machine: ^Machine, writable: bool = false) -> string {
 
     if writable {
         if os.exists(file) {
-            unimplemented("Overwrite")
+            debug("unimplemented(.Overwrite.)")
         }
     } else {
         if !os.exists(file) {
@@ -219,7 +219,6 @@ quetzal_filepath :: proc(machine: ^Machine, writable: bool = false) -> string {
 
 quetzal_restore :: proc(machine: ^Machine) -> bool {
     file := quetzal_filepath(machine)
-    debug("RESTORE: Starting restore process for %s", file)
 
     // https://zspec.jaredreisinger.com/06-game-state#6_1_2
     header := machine_header(machine)

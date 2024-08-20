@@ -45,7 +45,7 @@ object_properties :: proc(machine: ^Machine, object_number: u16) -> u16 {
     header := machine_header(machine)
     addr := object_addr(machine, object_number)
     if header.version <= 3 do return machine_read_word(machine, u32(addr) + OBJECT_PROPERTIES_V3)
-    else do return machine_read_word(machine, u32(addr) + OBJECT_PROPERTIES_V3)
+    else do return machine_read_word(machine, u32(addr) + OBJECT_PROPERTIES_V4)
 }
 
 object_has_name :: proc(machine: ^Machine, object_number: u16) -> bool {
@@ -97,62 +97,86 @@ object_test_attr :: proc(machine: ^Machine, object_number: u16, attribute: u16) 
     return machine_read_byte(machine, u32(addr + (attribute / 8))) & mask == mask
 }
 
+OBJECT_PROPERTY_NUM_MASK_V3 :: 0b00011111
+OBJECT_PROPERTY_NUM_MASK_V4 :: 0b00111111
+
 object_get_property_addr :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
     header := machine_header(machine)
+    if header.version <= 3 do assert(property_number <= 31)
     properties := object_properties(machine, object_number)
     text_length := machine_read_byte(machine, u32(properties))
     property := properties + u16(text_length) * 2 + 1;
-    if header.version <= 3 {
-        assert(property_number <= 31)
-        for {
-            size := machine_read_byte(machine, u32(property))
-            length := size >> 5 + 1
-            prop_num := size & 0b11111
-            if u16(prop_num) < property_number do return 0
-            if u16(prop_num) == property_number do return property + 1
-            property += u16(length) + 1
+    for {
+        length: u8
+        prop_num: u8
+        size := machine_read_byte(machine, u32(property))
+        if header.version <= 3 {
+            length = size >> 5 + 1
+            prop_num = size & OBJECT_PROPERTY_NUM_MASK_V3
+        } else {
+            prop_num = size & OBJECT_PROPERTY_NUM_MASK_V4
+            if bit(size, 7) {
+                property += 1
+                size = machine_read_byte(machine, u32(property))
+                length = size & OBJECT_PROPERTY_NUM_MASK_V4
+                // https://zspec.jaredreisinger.com/12-objects#12_4_2_1_1
+                if length == 0 do length = 64
+            } else do length = bit(size, 6) ? 2 : 1
         }
-        unreachable()
-    } else {
-        unimplemented("V4+ property tables")
+        if u16(prop_num) < property_number do return 0
+        if u16(prop_num) == property_number do return property + 1
+        property += u16(length) + 1
     }
+    unreachable()
 }
 
 object_get_property_len :: proc(machine: ^Machine, property_address: u16) -> u16 {
     header := machine_header(machine)
-    if header.version <= 3 {
-        if property_address == 0 do return 0
-        size := machine_read_byte(machine, u32(property_address) - 1)
-        length := size >> 5 + 1
-        return u16(length)
-    } else {
-        unimplemented("V4+ property tables")
+    if property_address == 0 do return 0
+    size := machine_read_byte(machine, u32(property_address) - 1)
+    if header.version <= 3 do return u16(size >> 5 + 1)
+    else {
+        if bit(size, 7) {
+            length := u16(size & OBJECT_PROPERTY_NUM_MASK_V4)
+            // https://zspec.jaredreisinger.com/12-objects#12_4_2_1_1
+            if length == 0 do length = 64
+            return length
+        } else do return u16(bit(size, 6) ? 2 : 1)
     }
+    unreachable()
+}
+
+object_first_property :: proc(machine: ^Machine, object_number: u16) -> u16 {
+    header := machine_header(machine)
+    properties := object_properties(machine, object_number)
+    text_length := machine_read_byte(machine, u32(properties))
+    property := properties + u16(text_length) * 2 + 1;
+    size := machine_read_byte(machine, u32(property))
+    prop_num: u8
+    if header.version <= 3 do prop_num = size & OBJECT_PROPERTY_NUM_MASK_V3
+    else do prop_num = size & OBJECT_PROPERTY_NUM_MASK_V4
+    return u16(prop_num)
 }
 
 object_next_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
     header := machine_header(machine)
+    if property_number == 0 do return object_first_property(machine, object_number)
     property_address := object_get_property_addr(machine, object_number, property_number)
-    if header.version <= 3 {
-        if property_address == 0 do return 0
-        size := machine_read_byte(machine, u32(property_address) - 1)
-        length := size >> 5 + 1
-        size = machine_read_byte(machine, u32(property_address) + u32(length) - 1)
-        if size == 0 do return 0
-        prop_num := size & 0b11111
-        return u16(prop_num)
-    } else {
-        unimplemented("V4+ property tables")
-    }
+    if property_address == 0 do return 0
+    length := object_get_property_len(machine, property_address)
+    size := machine_read_byte(machine, u32(property_address) + u32(length))
+    if size == 0 do return 0
+    prop_num: u8
+    if header.version <= 3 do prop_num = size & OBJECT_PROPERTY_NUM_MASK_V3
+    else do prop_num = size & OBJECT_PROPERTY_NUM_MASK_V4
+    return u16(prop_num)
 }
 
 object_get_property :: proc(machine: ^Machine, object_number: u16, property_number: u16) -> u16 {
     header := machine_header(machine)
     addr := object_get_property_addr(machine, object_number, property_number)
-    if addr == 0 {
-        if header.version <= 3 do return machine_read_word(machine, u32(2 * (property_number - 1) + u16(header.objects)))
-        else do unimplemented("V4+ property tables")
-    }
+    // Defaults table
+    if addr == 0 do return machine_read_word(machine, u32(2 * (property_number - 1) + u16(header.objects)))
     length := object_get_property_len(machine, addr)
     switch length {
         case 1: return u16(machine_read_byte(machine, u32(addr)))
@@ -169,30 +193,39 @@ object_put_property :: proc(machine: ^Machine, object_number: u16, property_numb
     properties := object_properties(machine, object_number)
     text_length := machine_read_byte(machine, u32(properties))
     property := properties + u16(text_length) * 2 + 1;
-    if header.version <= 3 {
-        for {
-            size := machine_read_byte(machine, u32(property))
-            if size == 0 do break
-            length := size >> 5 + 1
-            prop_num := size & 0b11111
-            if u16(prop_num) < property_number {
-                unreachable("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
-                            object_number, object_name(machine, object_number), property_number, prop_num)
-            }
-            if u16(prop_num) == property_number {
-                switch length {
-                    case 1: machine_write_byte(machine, u32(property) + 1, u8(value))
-                    case 2: machine_write_word(machine, u32(property) + 1, value)
-                    case:
-                        unreachable("Writing value to object %d property %d failed: Expected length of 1 or 2. Got %d",
-                                    object_number, property_number, length)
-                }
-                return
-            }
-            property += u16(length) + 1
+    for {
+        length: u8
+        prop_num: u8
+        size := machine_read_byte(machine, u32(property))
+        if size == 0 do break
+        if header.version <= 3 {
+            length = size >> 5 + 1
+            prop_num = size & OBJECT_PROPERTY_NUM_MASK_V3
+        } else {
+            prop_num = size & OBJECT_PROPERTY_NUM_MASK_V4
+            if bit(size, 7) {
+                property += 1
+                size = machine_read_byte(machine, u32(property))
+                length = size & OBJECT_PROPERTY_NUM_MASK_V4
+                // https://zspec.jaredreisinger.com/12-objects#12_4_2_1_1
+                if length == 0 do length = 64
+            } else do length = bit(size, 6) ? 2 : 1
         }
-    } else {
-        unimplemented("V4+ property tables")
+        if u16(prop_num) < property_number {
+            unreachable("Writing value to object %d (%s) property %d failed: Could not find property above property %d",
+                        object_number, object_name(machine, object_number), property_number, prop_num)
+        }
+        if u16(prop_num) == property_number {
+            switch length {
+                case 1: machine_write_byte(machine, u32(property) + 1, u8(value))
+                case 2: machine_write_word(machine, u32(property) + 1, value)
+                case:
+                    unreachable("Writing value to object %d property %d failed: Expected length of 1 or 2. Got %d",
+                                object_number, property_number, length)
+            }
+            return
+        }
+        property += u16(length) + 1
     }
 }
 
