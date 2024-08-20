@@ -328,12 +328,12 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     header = machine_header(machine)
     header.flags2 = flags2
 
-    debug("RESTORE: Finished")
     return true
 }
 
 quetzal_form_write_data :: proc(fd: os.Handle, data: []u8, length: ^u32) {
-    os.write(fd, data)
+    n, err := os.write(fd, data)
+    assert(n == len(data))
     length^ += u32(len(data))
 }
 
@@ -377,7 +377,6 @@ quetzal_write_ifhd :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
     quetzal_form_write(fd, header.serial[:], length)
     quetzal_form_write(fd, u16(header.checksum), length)
     pc := current_frame.pc
-    debug("FIXME, i'm not too sure that the PC calculation is correct")
     if header.version <= 3 {
         // V3 pc points to the branch byte(s) of the SAVE instruction
         // https://zspec.jaredreisinger.com/04-instructions#4_7
@@ -422,17 +421,18 @@ quetzal_write_cmem :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
     counter := u32(0)
     for orig_b, idx in memory {
         b := orig_b ~ machine.memory[idx]
-        if b == 0 {
-            counter += 1
-        } else {
-            for counter >= 0xff {
+        seek, err := os.seek(fd, 0, os.SEEK_CUR)
+        if err != os.ERROR_NONE do break
+        if b == 0 do counter += 1
+        else {
+            for counter > 0xff {
                 quetzal_form_write(fd, u8(0), &cmem_length)
-                quetzal_form_write(fd, u8(0xfe), &cmem_length)
-                counter -= 0xff
+                quetzal_form_write(fd, u8(0xff), &cmem_length)
+                counter -= 0x100
             }
             if counter > 0 {
                 quetzal_form_write(fd, u8(0), &cmem_length)
-                quetzal_form_write(fd, counter, &cmem_length)
+                quetzal_form_write(fd, u8(counter - 1), &cmem_length)
                 counter = 0
             }
             quetzal_form_write(fd, b, &cmem_length)
@@ -466,29 +466,30 @@ quetzal_write_stks :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
 
     header := machine_header(machine)
     if header.version == 6 do unimplemented("Initial frame in V6")
-    for _ in 0..<6 do quetzal_form_write(fd, u8(0), &stks_length)
+    for _ in 0..<6 do quetzal_form_write(fd, u8(0), &stks_length) // pc, flags, store, arg_count
     if len(machine.frames) > 0 {
         frame := machine.frames[0]
-        quetzal_form_write(fd, u32(len(frame.stack)), &stks_length)
+        quetzal_form_write(fd, u16(len(frame.stack)), &stks_length)
         for val in frame.stack do quetzal_form_write(fd, val, &stks_length)
-    } else do quetzal_form_write(fd, u32(0), &stks_length)
+    } else do quetzal_form_write(fd, u16(0), &stks_length)
 
     for idx := 1; idx < len(machine.frames); idx += 1 {
-        // FIXME The way the PC is calculated is a bit weird as no PC on the actual machine
+        // NOTE: The way the PC is calculated is a bit weird as no PC on the actual machine
         //       Hence the use of the `last_frame`
         last_frame := machine.frames[idx - 1]
         pc_data: [4]u8
         endian.put_u32(pc_data[:], .Big, last_frame.pc)
         quetzal_form_write(fd, pc_data[1:], &stks_length)
         frame := machine.frames[idx]
-        flags := u8(0)
-        for _ in frame.variables do flags = (flags << 1) + 1 // vvvv
+        flags := u8(len(frame.variables) & 0x0F) // vvvv
         if !frame.has_store do flags |= 0x10 // p
         quetzal_form_write(fd, flags, &stks_length)
         quetzal_form_write(fd, frame.store, &stks_length)
         args := u8(0)
         for _ in 0..<frame.arg_count do args = (args << 1) + 1 // gfedcba
-        quetzal_form_write(fd, u32(len(frame.stack)), &stks_length)
+        quetzal_form_write(fd, args, &stks_length)
+        quetzal_form_write(fd, u16(len(frame.stack)), &stks_length)
+        for val in frame.variables do quetzal_form_write(fd, val, &stks_length)
         for val in frame.stack do quetzal_form_write(fd, val, &stks_length)
     }
 
@@ -498,6 +499,7 @@ quetzal_write_stks :: proc(machine: ^Machine, fd: os.Handle, length: ^u32) -> bo
 quetzal_save :: proc(machine: ^Machine) -> bool {
     header := machine_header(machine)
     file := quetzal_filepath(machine, true)
+    debug("SAVE: Saving to %s", file) // FIXME should make and use info()
 
     mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
     perm := os.S_IRUSR | os.S_IWUSR // rw-------
@@ -524,6 +526,5 @@ quetzal_save :: proc(machine: ^Machine) -> bool {
     quetzal_write_cmem(machine, fd, &form_length)
     quetzal_write_stks(machine, fd, &form_length)
 
-    debug("SAVE: Finished")
     return true
 }
