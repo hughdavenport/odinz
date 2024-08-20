@@ -266,10 +266,25 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
     for chunk, ok = quetzal_next_chunk(&form);
             ok;
             chunk, ok = quetzal_next_chunk(&form) {
-        if !ok do return false
+        if !ok {
+            debug("RESTORE: Couldn't read next chunk")
+            return false
+        }
         switch chunk.type {
-            case .STKS: frames = quetzal_process_stks_chunk(machine, chunk) or_return
-            case .CMEM: memory = quetzal_process_cmem_chunk(machine, chunk) or_return
+            case .STKS:
+                frames, ok = quetzal_process_stks_chunk(machine, chunk)
+                if !ok {
+                    debug("RESTORE: Couldn't parse STks")
+                    return false
+                }
+
+            case .CMEM:
+                memory, ok = quetzal_process_cmem_chunk(machine, chunk)
+                if !ok {
+                    debug("RESTORE: Couldn't parse CMem")
+                    return false
+                }
+
             case .UMEM: memory = chunk.data
 
             case .UNKNOWN: unreachable()
@@ -277,9 +292,7 @@ quetzal_restore :: proc(machine: ^Machine) -> bool {
             case .FORM: unreachable()
             case: unreachable()
         }
-        debug("RESTORE: Read %s chunk", chunk.type)
     }
-    if !ok do return false
 
     if len(memory) == 0 {
         debug("RESTORE: Never found a CMem or UMem chunk")
