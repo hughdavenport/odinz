@@ -175,15 +175,16 @@ machine_write_global :: proc(machine: ^Machine, global: u16, value: u16) {
     machine_write_word(machine, u32(machine_header(machine).globals) + u32(global) * 2, value)
 }
 
-machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
+machine_read_variable :: proc(machine: ^Machine, variable: u16, alter_stack: bool = true) -> u16 {
     current_frame := &machine.frames[len(machine.frames) - 1]
     switch variable {
         case 0:
             if len(current_frame.stack) == 0 do unreachable("Stack underflow")
             if .read in machine.config.trace {
-                fmt.printfln("READ @ STACK: 0x%04x, %v", current_frame.stack[0], current_frame.stack[1:])
+                fmt.printfln("READ @ STACK: 0x%04x, %04x", current_frame.stack[len(current_frame.stack)-1], current_frame.stack[1:])
             }
-            return pop(&current_frame.stack)
+            if alter_stack do return pop(&current_frame.stack)
+            else do return current_frame.stack[len(current_frame.stack) - 1]
 
         case 1..<16:
             if int(variable) > len(current_frame.variables) do unreachable("Variable overflow")
@@ -198,13 +199,14 @@ machine_read_variable :: proc(machine: ^Machine, variable: u16) -> u16 {
     }
 }
 
-machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16) {
+machine_write_variable :: proc(machine: ^Machine, variable: u16, value: u16, alter_stack: bool = true) {
     current_frame := &machine.frames[len(machine.frames) - 1]
     switch variable {
         case 0:
-            append(&current_frame.stack, value)
+            if alter_stack do append(&current_frame.stack, value)
+            else do current_frame.stack[len(current_frame.stack) - 1] = value
             if .write in machine.config.trace {
-                fmt.printfln("WRITE @ STACK: 0x%04x, %v", value, current_frame.stack)
+                fmt.printfln("WRITE @ STACK: 0x%04x, %04x", value, current_frame.stack)
             }
         case 1..<16:
             if int(variable) > len(current_frame.variables) do unreachable("Variable overflow")

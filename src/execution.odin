@@ -150,13 +150,13 @@ execute :: proc(machine: ^Machine) {
                 // https://zspec.jaredreisinger.com/15-opcodes#dec_chk
                 assert(len(instruction.operands) >= 1)
                 variable := machine_read_operand(machine, &instruction.operands[0])
-                x := i16(machine_read_variable(machine, variable))
+                x := i16(machine_read_variable(machine, variable, false))
                 #partial switch instruction.opcode {
                     case .INC, .INC_CHK: x += 1
                     case .DEC, .DEC_CHK: x -= 1
                     case: unreachable()
                 }
-                machine_write_variable(machine, variable, u16(x))
+                machine_write_variable(machine, variable, u16(x), false)
                 #partial switch instruction.opcode {
                     case .INC, .DEC: // Ignore
                     case .INC_CHK, .DEC_CHK:
@@ -457,7 +457,7 @@ execute :: proc(machine: ^Machine) {
                 a := machine_read_operand(machine, &instruction.operands[0])
                 value: u16
                 #partial switch instruction.opcode {
-                    case .LOAD: value = machine_read_variable(machine, a)
+                    case .LOAD: value = machine_read_variable(machine, a, false)
                     case .LOADB:
                         index := machine_read_operand(machine, &instruction.operands[1])
                         value = u16(machine_read_byte(machine, u32(a + index)))
@@ -474,7 +474,7 @@ execute :: proc(machine: ^Machine) {
                 assert(len(instruction.operands) == 2)
                 variable := machine_read_operand(machine, &instruction.operands[0])
                 value := machine_read_operand(machine, &instruction.operands[1])
-                machine_write_variable(machine, variable, value)
+                machine_write_variable(machine, variable, value, false)
 
             case .STOREB, .STOREW:
                 // https://zspec.jaredreisinger.com/15-opcodes#storeb
@@ -588,7 +588,7 @@ execute :: proc(machine: ^Machine) {
                 } else {
                     variable := machine_read_operand(machine, &instruction.operands[0])
                     value := pop(&current_frame.stack)
-                    machine_write_variable(machine, variable, value)
+                    machine_write_variable(machine, variable, value, false)
                 }
 
             case .RET_POPPED:
