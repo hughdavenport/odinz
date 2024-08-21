@@ -41,6 +41,32 @@ Color :: enum u8 {
     PIXEL,
 }
 
+// https://zspec.jaredreisinger.com/08-screen#8_3_1
+TrueColor :: enum i16be {
+    CURRENT     = -2,
+    DEFAULT     = -1,
+    BLACK       = 0x0000,
+    RED         = 0x001D,
+    GREEN       = 0x0340,
+    YELLOW      = 0x03BD,
+    BLUE        = 0x59A0,
+    MAGENTA     = 0x7C1F,
+    CYAN        = 0x77A0,
+    WHITE       = 0x7FFF,
+    LIGHT_GREY  = 0x5AD6,
+    MEDIUM_GREY = 0x4631,
+    DARK_GREY   = 0x2D6B,
+    TRANSPARENT = -4,
+}
+
+HeaderExtra :: struct #raw_union {
+    infocom: [8]u8 `fmt:"s"`,
+    inform: struct {
+        unused: [4]u8,
+        version: [4]u8 `fmt:"s"`,
+    },
+}
+
 // https://zspec.jaredreisinger.com/11-header
 Header :: struct {
     version: u8 `fmt:"x"`,
@@ -74,8 +100,20 @@ Header :: struct {
     revision: u16be `fmt:"x"`,
     alphabet: u16be `fmt:"x"`,
     extension: u16be `fmt:"x"`,
+    extra: HeaderExtra,
 }
-#assert(size_of(Header) == 0x38)
+#assert(size_of(Header) == 0x40)
+
+HeaderExtension :: struct {
+    size: u16be `fmt:"d"`,
+    xclick: u16be `fmt:"d"`,
+    yclick: u16be `fmt:"d"`,
+    unicode: u16be `fmt:"d"`,
+    flags3: Flag3,
+    fgcolor: TrueColor `fmt:"d"`,
+    bgcolor: TrueColor `fmt:"d"`,
+}
+#assert(size_of(HeaderExtension) == 14)
 
 header_font_width :: proc(header: ^Header) -> u8 {
     if header.version >= 6 do return header.font2
@@ -124,6 +162,10 @@ Flag2 :: bit_set[enum {
     unused,
     print_error,    // Appendix B
     // rest unused
+}; u16be]
+
+Flag3 :: bit_set[enum {
+    transparency,   // V6
 }; u16be]
 
 @(private="file")
@@ -216,6 +258,14 @@ header_flags2_print :: proc(header: ^Header) {
 
 }
 
+@(private="file")
+header_flags3_print :: proc(header: ^Header, extension: ^HeaderExtension) {
+    if header.version >= 6 && extension.size >= 4 && .transparency in extension.flags3 {
+        fmt.print("Supports transparency")
+    } else do fmt.print("None")
+    fmt.println()
+}
+
 header_file_length :: proc(header: ^Header) -> int {
     file_length := int(header.length)
     switch {
@@ -239,8 +289,6 @@ header_dump :: proc(machine: ^Machine) {
     header := machine_header(machine)
 
     raw_header := machine.memory[0:0x40]
-    fmt.eprintfln("raw header = %02x", raw_header)
-    fmt.eprintfln("header struct = %#v", header^)
 
     // Based off output from infodump
 
@@ -284,9 +332,24 @@ header_dump :: proc(machine: ^Machine) {
     }
     if header.version >= 5 {
         fmt.printfln("%-26s%04x", "Terminating address:", header.terminating)
-        fmt.printfln("%-26s%04x", "Alphabet address", header.alphabet)
+        if header.terminating != 0 {
+            unimplemented("%-26s", "    Keys Used:")
+        }
+        fmt.printfln("%-26s%04x", "Alphabet address:", header.alphabet)
         fmt.printfln("%-26s%04x", "Header extension address", header.extension)
-        if header.extension != 0 do unimplemented("flags3, unicode address, etc from extensions")
+        if header.extension != 0 {
+            extension := machine_header_extension(machine)
+            fmt.printfln("%-26s%04x", "Header extension size", extension.size)
+            if extension.size >= 3 do fmt.printfln("%-26s%04x", "Unicode address", extension.unicode)
+            if extension.size >= 4 {
+                fmt.printfln("%-26s", "Extension flags:")
+                header_flags3_print(header, extension)
+            }
+        }
+    }
+
+    if header.extra.inform.version[0] != 0 {
+        fmt.printfln("%-26s%s", "Inform version:", header.extra.inform.version)
     }
 }
 

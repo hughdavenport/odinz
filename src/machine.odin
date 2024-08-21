@@ -35,10 +35,19 @@ Machine :: struct {
 }
 
 machine_header :: proc(machine: ^Machine) -> ^Header {
-    raw_header := machine.memory[0:0x40]
+    raw_header := machine.memory[0:][:size_of(Header)]
     ptr, ok := slice.get_ptr(raw_header, 0)
     if !ok do unreachable("Could not get header slice")
     return transmute(^Header)ptr;
+}
+
+machine_header_extension :: proc(machine: ^Machine) -> ^HeaderExtension {
+    header := machine_header(machine)
+    assert(header.version >= 5 && header.extension != 0)
+    raw_extension := machine.memory[header.extension:][:size_of(HeaderExtension)]
+    ptr, ok := slice.get_ptr(raw_extension, 0)
+    if !ok do unreachable("Could not get extension slice")
+    return transmute(^HeaderExtension)ptr;
 }
 
 machine_dump :: proc(machine: ^Machine, to_disk := false, dump_memory := false) {
@@ -267,6 +276,19 @@ _initilise_machine_flags2 :: proc(machine: ^Machine) {
     if header.version >= 6 && false do header.flags2 += {.menus}
 }
 
+@(private="file")
+_initilise_machine_flags3 :: proc(machine: ^Machine) {
+    header := machine_header(machine)
+    if header.version < 5 || header.extension == 0 do return
+    extension := machine_header_extension(machine)
+    if extension.size < 4 do return // No flags 3
+
+    extension.flags3 -= {.transparency}
+
+    // FIXME add config options or detect ability
+    if header.version >= 6 && false do extension.flags3 += {.transparency}
+}
+
 restart_machine :: proc(machine: ^Machine) {
     // https://zspec.jaredreisinger.com/06-game-state#6_1_3
     header := machine_header(machine)
@@ -297,15 +319,11 @@ initialise_machine :: proc(machine: ^Machine) {
 
     _initilise_machine_flags1(machine)
     _initilise_machine_flags2(machine)
+    _initilise_machine_flags3(machine)
 
     if header.version >= 4 {
         header.interpreter_num = Interpreter.IBM_PC
         header.interpreter_version = 0
-    }
-
-    if header.version >= 5 && header.extension != 0 {
-        // FIXME header extension
-        // unimplemented()
     }
 
     // Adhere's to Standard 1.1
@@ -329,6 +347,11 @@ initialise_machine :: proc(machine: ^Machine) {
         header.font2 = 1
         header.bgcolor = .BLACK
         header.fgcolor = .WHITE
+        if header.extension != 0 {
+            extension := machine_header_extension(machine)
+            if extension.size >= 5 do extension.fgcolor = .WHITE
+            if extension.size >= 6 do extension.bgcolor = .BLACK
+        }
     }
     clear_screen()
     set_cursor(0, machine.screen.height - 1)
