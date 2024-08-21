@@ -652,10 +652,7 @@ execute :: proc(machine: ^Machine) {
 
             case .VERIFY:
                 // https://zspec.jaredreisinger.com/15-opcodes#verify
-                if header.version != 3 {
-                    debug("VERIFY is undefined for version %d. nop", header.version)
-                    continue
-                }
+                if header.version < 3 do unimplemented()
                 jump_condition = machine_checksum(machine) != header.checksum
 
         } // switch instruction.opcode
