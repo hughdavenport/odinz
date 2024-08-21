@@ -236,7 +236,7 @@ execute :: proc(machine: ^Machine) {
                 packed := machine_read_operand(machine, &instruction.operands[0])
                 routine_addr := packed_addr(machine, packed)
                 if routine_addr == 0 {
-                    #assert(u16(Opcode.NUM_OPS) == 75) // Can remove after CALL_VS is added
+                    #assert(uint(Opcode.NUM_OPS) == 76) // Can remove after CALL_VS is added
                     #partial switch instruction.opcode {
                         case .CALL, .CALL_1S, .CALL_2S, .CALL_VS2:
                             machine_write_variable(machine, u16(instruction.store), 0)
@@ -602,6 +602,11 @@ execute :: proc(machine: ^Machine) {
 
 
             // Misc
+            case .PIRACY:
+                // https://zspec.jaredreisinger.com/15-opcodes#piracy
+                assert(instruction.has_branch)
+                jump_condition = true
+
             case .QUIT:
                 // https://zspec.jaredreisinger.com/15-opcodes#quit
                 return
